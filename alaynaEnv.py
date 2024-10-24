@@ -1,12 +1,14 @@
 import numpy as np
 
 class PongEnv:
-    def __init__(self, grid_size=10, ball_dx=1, ball_dy=1, ball_x=None, ball_y=None):
+    def __init__(self, grid_size=10, ball_dx=1, ball_dy=1, ball_x=None, ball_y=None, max_steps=100):
         self.grid_size = grid_size
         self.initial_ball_dx = ball_dx
         self.initial_ball_dy = ball_dy
         self.initial_ball_x = ball_x if ball_x is not None else self.grid_size // 2 # if not specificed, ball starts in the center
         self.initial_ball_y = ball_y if ball_y is not None else self.grid_size // 2 # if not specificed, ball starts in the center
+        self.current_step = 0
+        self.max_steps = max_steps
         self.reset()
 
     def reset(self):
@@ -117,6 +119,12 @@ class PongEnv:
         # make sure ball stays within grid bounds
         self.ball_x = max(0, min(self.ball_x, self.grid_size - 1))
         self.ball_y = max(0, min(self.ball_y, self.grid_size - 1))
+        
+        self.current_step += 1
+        # Check if the game has timed out
+        if self.current_step >= self.max_steps:
+            self.done = True  
+            reward = 0  
 
         return self.get_state(), reward, self.done
     
