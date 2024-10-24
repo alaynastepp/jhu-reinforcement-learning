@@ -152,7 +152,7 @@ if __name__ == "__main__":
     print("Starting grid:")
     env.render()
 
-    steps = 25
+    steps = 50
     for step in range(steps):
         ball_x, ball_y, paddle_y, ball_dx, ball_dy = env.get_state()
 
