@@ -1,97 +1,91 @@
 import pygame
-from alaynaEnv import PongEnv 
+import sys
+from alaynaEnv import PongEnv
 
-# Constants for visualization
-WINDOW_SIZE = 500
-GRID_SIZE = 10
-CELL_SIZE = WINDOW_SIZE // GRID_SIZE
+# Initialize Pygame
+pygame.init()
 
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
+# Screen dimensions
+screen_width = 600
+screen_height = 600
+grid_size = 10
+cell_size = screen_width // grid_size
 
-def draw_grid(screen):
-    """ Draw the grid background """
-    for x in range(0, WINDOW_SIZE, CELL_SIZE):
-        pygame.draw.line(screen, WHITE, (x, 0), (x, WINDOW_SIZE))
-    for y in range(0, WINDOW_SIZE, CELL_SIZE):
-        pygame.draw.line(screen, WHITE, (0, y), (WINDOW_SIZE, y))
+# Colors
+white = (255, 255, 255)
+black = (0, 0, 0)
+red = (255, 0, 0)
 
-def draw_paddle(screen, paddle_y):
-    """ Draw the paddle """
-    paddle_rect = pygame.Rect(WINDOW_SIZE - CELL_SIZE, paddle_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-    pygame.draw.rect(screen, GREEN, paddle_rect)
+# Set up the display
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Pong with Grid and Wall")
 
-def draw_ball(screen, ball_x, ball_y):
-    """ Draw the ball """
-    ball_rect = pygame.Rect(ball_x * CELL_SIZE, ball_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-    pygame.draw.rect(screen, RED, ball_rect)
+# Ball properties
+ball_radius = cell_size // 4
+ball_x, ball_y = screen_width // 2, screen_height // 2
+ball_dx, ball_dy = 4, 4  # Ball speed
 
-def visualize_pong():
-    pygame.init()
+# Initialize the Pong environment
+env = PongEnv(grid_size=grid_size)
+env.reset()
+
+# Function to draw grid
+def draw_grid():
+    for row in range(grid_size):
+        for col in range(grid_size):
+            rect = pygame.Rect(col * cell_size, row * cell_size, cell_size, cell_size)
+            pygame.draw.rect(screen, white, rect, 1)
+
+# Function to draw wall
+def draw_wall():
+    wall_width = cell_size // 4  # Width of the wall markings
+    for i in range(grid_size):
+        pygame.draw.rect(screen, red, (0, i * cell_size, wall_width, cell_size))
+
+# Main game loop
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+    # Get the current state from the environment
+    ball_x, ball_y, paddle_y, ball_dx, ball_dy = env.get_state()
     
-    # Set up display
-    screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE))
-    pygame.display.set_caption("Pong Visualization")
+    # Predict where the ball will hit on the right wall
+    steps_to_wall = (grid_size - 1 - ball_x)
+    predicted_ball_y = ball_y - (ball_dy * steps_to_wall)
 
-    # Initialize the Pong Environment
-    env = PongEnv(grid_size=GRID_SIZE)
-    env.reset()
+    # Handle out-of-bounds for the predicted position (reflect back)
+    if predicted_ball_y < 0:
+        predicted_ball_y = -predicted_ball_y 
+    elif predicted_ball_y >= grid_size:
+        predicted_ball_y = (grid_size - 1) - (predicted_ball_y - (grid_size - 1)) 
 
-    clock = pygame.time.Clock()
-    running = True
-    steps = 50
-    action = 0  # Default action (stay still)
-    
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-        
-        screen.fill(BLACK)
-        draw_grid(screen)
+    # Determine paddle action based on predicted ball position
+    if predicted_ball_y < paddle_y:
+        action = 1  # Move up
+    elif predicted_ball_y > paddle_y:
+        action = 2  # Move down
+    else:
+        action = 0  # Stay still
 
-        # Get the current state
-        ball_x, ball_y, paddle_y, ball_dx, ball_dy = env.get_state()
+    # Execute the action in the environment
+    new_state, reward, done = env.execute_action(action)
 
-        # Visualize the paddle and ball
-        draw_paddle(screen, paddle_y)
-        draw_ball(screen, ball_x, ball_y)
-        
-        # Predict how many steps the ball will travel until it hits the right wall
-        steps_to_wall = (env.grid_size - 1 - ball_x)
-        predicted_ball_y = ball_y - (ball_dy * steps_to_wall)
+    # Clear the screen
+    screen.fill(black)
 
-        # Handle out-of-bounds for the predicted position (reflect back)
-        if predicted_ball_y < 0:
-            predicted_ball_y = -predicted_ball_y
-        elif predicted_ball_y >= env.grid_size:
-            predicted_ball_y = (env.grid_size - 1) - (predicted_ball_y - (env.grid_size - 1))
+    # Draw the grid, wall, and ball
+    draw_grid()
+    draw_wall()
+    pygame.draw.circle(screen, white, (ball_x * cell_size + cell_size // 2, ball_y * cell_size + cell_size // 2), ball_radius)
 
-        # Move the paddle to the predicted position
-        if predicted_ball_y < paddle_y:
-            action = 1  # Move up
-        elif predicted_ball_y > paddle_y:
-            action = 2  # Move down
-        else:
-            action = 0  # Stay still
+    paddle_rect = pygame.Rect(screen_width - (cell_size // 2), paddle_y * cell_size, cell_size // 2, cell_size)
+    pygame.draw.rect(screen, white, paddle_rect)
 
-        # Execute the action and update state
-        new_state, reward, done = env.execute_action(action)
+    # Update the display
+    pygame.display.flip()
 
-        # Update display
-        pygame.display.flip()
-
-        # Check if game is over
-        if done:
-            print("Game Over!")
-            running = False
-
-        # Limit frames per second
-        clock.tick(5)  # Adjust FPS as needed
-
-    pygame.quit()
-
-if __name__ == "__main__":
-    visualize_pong()
+    # Set frame rate
+    pygame.time.Clock().tick(10)
