@@ -5,6 +5,7 @@ class PongEnv:
         self.initial_ball_dy = ball_dy
         self.initial_ball_x = ball_x if ball_x is not None else self.grid_size // 2 # if not specificed, ball starts in the center
         self.initial_ball_y = ball_y if ball_y is not None else self.grid_size // 2 # if not specificed, ball starts in the center
+
         self.reset()
 
     def reset(self):
@@ -23,7 +24,21 @@ class PongEnv:
         self.paddle_y = self.grid_size // 2
         self.score = 0
         self.done = False
+
         return self.get_state()
+    
+    def get_state_val(self):
+        """
+        Get the current state in form of an integer
+
+        :return state (int): Current state encompassing information: ball position, paddle position, and velocity
+        """
+
+        # grid is width and height of 10, so values will be 0 through 9
+        # each part of the state is single digits
+        ball_dx_val = 0 if self.ball_dx > 0 else 1
+        ball_dy_val = 0 if self.ball_dy > 0 else 1
+        return self.ball_x + (self.ball_y * 10) + (self.paddle_y * 100) + (self.ball_dx * 1000) + (ball_dx_val * 10000) + (self.ball_dy * 100000) + (ball_dy_val * 1000000)
 
     def get_state(self):
         """
@@ -72,14 +87,21 @@ class PongEnv:
         :return reward (int): The action selected
         :return done (bool): The action selected
         """
-
+        raise NotImplementedError
 
     def render(self):
         """
         Visualize the grid with ball and paddle
         """
+        raise NotImplementedError
+    
+    def get_terminal_states(self):
+        """
+        Gets all the possible terminal states that end the game
 
-
+        :return (list): list of ints that represent terminal states
+        """
+        raise NotImplementedError
 
 env = PongEnv(grid_size=10)
 print("Total states: ", env.get_number_of_states())
