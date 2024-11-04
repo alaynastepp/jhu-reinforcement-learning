@@ -26,7 +26,7 @@ ball_x, ball_y = screen_width // 2, screen_height // 2
 ball_dx, ball_dy = 4, 4  # Ball speed
 
 # Initialize the Pong environment
-env = PongEnv(grid_size=grid_size)
+env = PongEnv(grid_size=grid_size, ball_dx=-1, ball_dy=-1)
 env.reset()
 
 # Function to draw grid
@@ -88,4 +88,4 @@ while True:
     pygame.display.flip()
 
     # Set frame rate
-    pygame.time.Clock().tick(10)
+    pygame.time.Clock().tick(5)

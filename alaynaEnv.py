@@ -88,19 +88,19 @@ class PongEnv:
                 # Handle ball angle change based on paddle movement and ball direction
                 if self.ball_dy < 0:  # Ball coming down
                     if action == 1:  # Paddle moving up
-                        self.ball_dy = -1  # Send ball back up at same 45-degree angle
+                        self.ball_dy = 0  # Normal bounce: send ball back in opposite angle
                     elif action == 2:  # Paddle moving down
-                        self.ball_dy = 1  # Normal bounce: send ball back in opposite angle
+                        self.ball_dy = -1  # Send ball back up at same 45-degree angle
                     elif action == 0:  # Paddle stationary
-                        self.ball_dy = 0  # Send ball back in a straight vertical line
+                        self.ball_dy = -1  # Send ball back up at same 45-degree angle
 
                 elif self.ball_dy > 0:  # Ball coming up
                     if action == 1:  # Paddle moving up
-                        self.ball_dy = 1  # Normal bounce: send ball back in opposite angle
+                        self.ball_dy = 1  # Send ball back down at same 45-degree angle
                     elif action == 2:  # Paddle moving down
-                        self.ball_dy = -1  # Send ball back down at same 45-degree angle
-                    elif action == 0:  # Paddle stationary
                         self.ball_dy = 0  # Send ball back in a straight vertical line
+                    elif action == 0:  # Paddle stationary
+                        self.ball_dy = 1  # Send ball back down at same 45-degree angle
 
                 elif self.ball_dy == 0:  # Ball coming straight
                     if action == 1:  # Paddle moving up
