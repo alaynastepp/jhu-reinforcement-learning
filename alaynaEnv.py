@@ -25,6 +25,7 @@ class PongEnv:
         
         # Reset the paddle position
         self.paddle_y = self.grid_size // 2
+        self.current_step = 0
         self.score = 0
         self.done = False
         return self.get_state()
@@ -37,6 +38,34 @@ class PongEnv:
         """
         return (self.ball_x, self.ball_y, self.paddle_y, self.ball_dx, self.ball_dy)
 
+    def get_state_index(self):
+        """
+        Convert the current state (ball position, paddle position, and velocity) into a unique index.
+
+        :return (int): The unique index representing the current state.
+        """
+        #TODO - kate tell me if this makes sense haha
+        # explanation:
+        # This part encodes the ball’s position on a 2D grid (like coordinates). Suppose the grid_size is 10.
+        # If ball_x = 3 and ball_y = 4, then ball_pos_index = 3 * 10 + 4 = 34.
+        # This turns a (3, 4) coordinate into a unique number, 34, which represents a linearized position in a 1D array for easier indexing.
+        ball_pos = self.ball_x * self.grid_size + self.ball_y
+        
+        # This represents the paddle's vertical position. Since it can only move vertically, self.paddle_y is enough to capture its state.
+        paddle_pos = self.paddle_y
+        
+        # This converts the ball’s direction (dx and dy) into a single index.
+        # Here, self.ball_dx and self.ball_dy might be values like -1, 0, or 1 (representing left, neutral, or right for dx and up, neutral, or down for dy).
+        # By shifting both dx and dy by 1 (to 0, 1, 2), and then using 3 * dx + dy, this creates a unique value for each possible velocity combination:
+        # For example, if dx = -1 and dy = 1, then ball_velocity_index = (0) * 3 + 2 = 2.
+        # This approach creates a unique index between 0 and 8 for the 3x3 grid of (dx, dy) values.
+        ball_velocity = (self.ball_dx + 1) * 3 + (self.ball_dy + 1)  # Encode dx and dy values
+
+        # Combine them all
+        # Multiplying each part by different factors ensures that each combination of 
+        # ball position, paddle position, and ball velocity has a unique state_index.
+        return ball_pos * (self.grid_size * 9) + paddle_pos * 9 + ball_velocity
+    
     def get_number_of_states(self):
         """
         Number of possible states (based on ball position, paddle position, and ball velocity)
@@ -82,7 +111,7 @@ class PongEnv:
         if self.ball_x == self.grid_size - 1:
             if self.paddle_y == self.ball_y:
                 self.score += 1
-                reward = +1
+                reward = +25
                 self.ball_dx *= -1  # reverse direction
                 
                 # Handle ball angle change based on paddle movement and ball direction
@@ -112,7 +141,7 @@ class PongEnv:
             else:
                 # paddle missed the ball
                 self.done = True
-                reward = -1
+                reward = -25
         else:
             reward = 0  # no point scored, continue game
 
@@ -125,7 +154,6 @@ class PongEnv:
         if self.current_step >= self.max_steps:
             self.done = True  
             reward = 0  
-
         return self.get_state(), reward, self.done
     
     def render(self): 
