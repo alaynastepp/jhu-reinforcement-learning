@@ -13,7 +13,7 @@ class Agent:
 		"""
 		raise NotImplementedError
 
-	def update(self, state, reward):
+	def update(self, state, action, reward, next_state_index):
 		"""
 		Runs its internal algorithm to update the q table or do whatever is necessary
 
