@@ -121,7 +121,7 @@ if __name__ == '__main__':
 	parser.add_argument('--monte', action='store_true', help='if Monte Carlo algorithm should be run')
 	parser.add_argument('--qlearning', action='store_true', help='if Q-Learning algorithm should be run')
 
-	parser.add_argument('--viz', help="if visualization is wanted")
+	parser.add_argument('--viz', action='store_true', help="if visualization is wanted")
 
 	parser.add_argument('--gamma', help="the value to be used for gamma")
 	parser.add_argument('--learningrate', help='the value to be used for learning rate')

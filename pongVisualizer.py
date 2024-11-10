@@ -51,7 +51,6 @@ class PongVisualizer:
         pygame.draw.circle(self.screen, self.white, (ball_x * self.cell_size + self.cell_size // 2, ball_y * self.cell_size + self.cell_size // 2), self.ball_radius)
 
         # Draw the paddle
-        print(f"HERE {paddle_position} and {ball_y}")
         paddle_rect = pygame.Rect(self.screen_width - (self.cell_size // 2), paddle_position * self.cell_size, self.cell_size // 2, self.cell_size)
         pygame.draw.rect(self.screen, self.white, paddle_rect)
 
