@@ -3,11 +3,11 @@ from random import randint
 
 class MonteCarlo:
 
-	def __init__(self, epsilon=0.1):
+	def __init__(self, environment, gamma=None, learning_rate=None, epsilon=0.1):
 		self.epsilon = epsilon
 		self.gamma = 1		# no discounting
-		self.number_of_actions = 2
-		self.number_of_states = 204
+		self.number_of_actions = environment.get_number_of_actions()
+		self.number_of_states = environment.get_number_of_states()
 
 		self.state = 0
 
@@ -75,7 +75,7 @@ class MonteCarlo:
 
 		return action
 
-	def update_state(self, state, reward):
+	def update(self, state, reward):
 		# record new state and reward in trajectory array
 		self.trajectory.append([reward, state, -1])
 
