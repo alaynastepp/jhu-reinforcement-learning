@@ -3,28 +3,36 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 from typing import List, Tuple, Dict, Type, Union
+import argparse
 
-#from basicPongEnv import PongEnv
-#from exampleAgent import Agent
-from alaynaEnv import PongEnv
-from QLearning_agent import QLearningAgent
-from SARSA_agent import SARSA_0
+from QLearning_alayna import QLearningAgent
+from SARSA_alayna import SARSA_0
 from perfectAgent import PerfectAgent
-from pongVisualizer import PongVisualizer
 import metrics
+from basicPongEnv import PongEnv
+from pongVisualizer import PongVisualizer
+from MonteCarlo_Agent import MonteCarlo
+from SARSA_Agent import SARSA
+from QLearning_Agent import QLearning
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-AGENT_COUNT = 10
-EPISODE_COUNT = 1000
+AGENT_COUNT = 1
+EPISODE_COUNT = 200
 WINDOW_LENGTH = 30
 EXP_STARTS = False
+DEBUG = False
+
+def log(val):
+	if DEBUG:
+		print(val)
+  
 METRICS_PATH = os.path.join(HERE, 'experiment1')
 
 if METRICS_PATH and not os.path.exists(METRICS_PATH):
         os.makedirs(METRICS_PATH)
         
-def generate_episode(episode: int, env: PongEnv, agent, visualizer=None, debug: bool = False) -> Tuple[List[float], np.ndarray, Tuple, bool]:
+def generate_episode(episode: int, env: PongEnv, agent, visualizer=None) -> Tuple[List[float], np.ndarray, Tuple, bool]:
     """
     Play one episode in the environment using the agent and collect rewards.
 
@@ -32,14 +40,12 @@ def generate_episode(episode: int, env: PongEnv, agent, visualizer=None, debug: 
     :param env (PongEnv): The Pong environment.
     :param agent: The agent that interacts with the environment.
     :param visualizer: Optional visualizer to render each step.
-    :param debug (bool): If True, prints debug information.
     :return rewards (list): List of rewards collected in the episode.
     :return final_state (tuple): The final state after the episode ends.
     """
     current_state = env.reset()
     # In generate_episode, after state reset:
-    if debug:
-        print(f"Initial ball position: {env.ball_x}, paddle position: {env.paddle_y}")
+    log(f"Initial ball position: {env.ball_x}, paddle position: {env.paddle_y}")
 
     game_end = False
     rewards = []
@@ -53,8 +59,8 @@ def generate_episode(episode: int, env: PongEnv, agent, visualizer=None, debug: 
         new_state, reward, game_end = env.execute_action(action)
         next_state_index = env.get_state_index()
         # Current state of game
-        if debug:
-            print(f"Episode: {episode + 1}, State: {new_state}, Reward: {reward}, Done: {game_end}")
+        log(f"Episode: {episode + 1}, State: {new_state}, Reward: {reward}, Done: {game_end}")
+        if DEBUG:
             env.render()
         rewards.append(reward)
         episode_visit_count[state_index, action] += 1
@@ -66,18 +72,22 @@ def generate_episode(episode: int, env: PongEnv, agent, visualizer=None, debug: 
             ball_x, ball_y, paddle_y, _, _ = env.get_state()
             visualizer.render((ball_x, ball_y), paddle_y)
         current_state = new_state
+        
+    if agent is MonteCarlo:
+        agent.update_q()
+        agent.clear_trajectory()
+  
     # return the result of the game
-    return rewards, episode_visit_count, current_state, win
+    return rewards, episode_visit_count, current_state, win, env.get_score()
 
-def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent]], alpha: float = 0.1, gamma: float = 0.9, epsilon: float = 0.2, debug: bool = False) -> Dict[str, Union[float, np.ndarray, List[float]]]:
+def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent, MonteCarlo]], args) -> Dict[str, Union[float, np.ndarray, List[float]]]:
     """
 	Based on the agent type passed in, run many agents for a certain amount of episodes and gather metrics on their performance
 
-	:param agent_class (class): One of the following: SARSA_0, QLearningAgent, or PerfectAgent.
+	:param agent_class (class): One of the following: SARSA_0, QLearningAgent, or MonteCarlo.
     :param alpha (float): Learning rate.
     :param gamma (float): Discount factor.
     :param epsilon (float): Exploration rate.
-    :param debug (bool): If True, enables debug mode.
     :return Dict containing the following metrics:
             'avg_rewards': np.ndarray - Average rewards over all agents.
             'avg_wins': float - Overall win rate.
@@ -86,7 +96,15 @@ def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent]], 
             'state_visit_percentages': List[float] - State visit percentages across episodes.
 	"""
     environment = PongEnv(grid_size=10)
-    #visualizer = PongVisualizer(grid_size=10, cell_size=60)
+    if args.viz:
+        visualizer = PongVisualizer(grid_size=10, cell_size=60)
+    else:
+        visualizer = None
+        
+    params = {"gamma": args.gamma, "learning_rate": args.learningrate, "epsilon": args.epsilon}
+    params = {k:float(v) for k,v in params.items() if v is not None}
+    print(f"Running trials for {agent_class} with non-default args {params}")
+
     all_rewards = []
     all_wins = []
     total_wins = 0
@@ -99,8 +117,7 @@ def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent]], 
             if agent_class == PerfectAgent:
                 agent = agent_class(environment) 
             else:
-                agent = agent_class(environment.get_number_of_states(), environment.get_number_of_actions(),
-                                alpha=alpha, gamma=gamma, epsilon=epsilon)
+                agent = agent_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
             # initialize arrays for keeping track of agent performance over time
             episode_rewards = []
             win_status = []
@@ -108,12 +125,12 @@ def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent]], 
             wins = 0
             for i in range(EPISODE_COUNT): 
                 # play game
-                rewards, episode_visit_count, final_state, win = generate_episode(i, environment, agent, debug=debug) #, visualizer=visualizer
+                rewards, episode_visit_count, final_state, win, score = generate_episode(i, environment, agent, visualizer=visualizer)
                 episode_rewards.append(sum(rewards))
                 win_status.append(1 if win else 0)
                 wins += win
                 if agent_class != PerfectAgent:
-                    v_t = agent.get_state_actn_visits()
+                    v_t = agent.get_visited_states_num()
                     V_t[i,0] = (v_t/agent.get_number_of_states())*100
                 #agent.clear_trajectory() 
             
@@ -125,7 +142,9 @@ def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent]], 
             
             for reward in episode_rewards:
                 reward_file.write(f"{reward}\n")
-            #visualizer.close()
+                
+            if visualizer is not None:
+                visualizer.close()
         
     avg_rewards = np.mean(all_rewards, axis=0)
     avg_wins = total_wins / (AGENT_COUNT * EPISODE_COUNT)  # Calculate win rate
@@ -230,16 +249,33 @@ def verify_get_state_index(env):
         print("All state indices are unique. `get_state_index` logic appears correct.")
     print(f"Total unique states checked: {len(unique_indices)}")
 
+
 if __name__ == '__main__':
     
-    print("Running Perfect agent...")
-    perfect_metrics = run_trials(PerfectAgent, debug=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--sarsa', action='store_true', help='if SARSA algorithm should be run')
+    parser.add_argument('--monte', action='store_true', help='if Monte Carlo algorithm should be run')
+    parser.add_argument('--qlearning', action='store_true', help='if Q-Learning algorithm should be run')
+    parser.add_argument('--viz', action='store_true', help="if visualization is wanted")
+    parser.add_argument('--gamma', help="the value to be used for gamma")
+    parser.add_argument('--learningrate', help='the value to be used for learning rate')
+    parser.add_argument('--epsilon', help='the value to be used for epsilon')
     
-    print("Training SARSA agent...")
-    sarsa_metrics = run_trials(SARSA_0, debug=True)
+    args = parser.parse_args()
     
-    print("Training Q-Learning agent...")
-    qlearning_metrics = run_trials(QLearningAgent, debug=True)
+    #print("Running Perfect agent...")
+    #perfect_metrics = run_trials(PerfectAgent, args=args)
+    
+    if args.monte:
+        monte_rewards, monte_scores = run_trials(MonteCarlo, args=args)
+  
+    if args.sarsa:
+        print("Training SARSA agent...")
+        sarsa_metrics = run_trials(SARSA_0, args=args)
+    
+    if args.qlearning:
+        print("Training Q-Learning agent...")
+        qlearning_metrics = run_trials(QLearningAgent, args=args)
 
     # Plot cumulative returns
     metrics.plot_cumulative_return(
@@ -315,6 +351,3 @@ if __name__ == '__main__':
 
     # Run experiments for Q-Learning
     run_trials_with_hyperparams(QLearningAgent, alpha_values, gamma_values, epsilon_values)
-
-
-	

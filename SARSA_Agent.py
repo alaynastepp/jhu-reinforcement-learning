@@ -3,14 +3,14 @@ from random import randint
 
 class SARSA:
 
-	def __init__(self, num_states, num_actions, gamma=0.9, learning_rate=0.1, epsilon=0.2):
+	def __init__(self, environment, gamma=0.9, learning_rate=0.1, epsilon=0.2):
 
 		self.gamma = gamma
 		self.learning_rate = learning_rate
 		self.epsilon = epsilon
 
-		self.number_of_states = num_states
-		self.number_of_actions = num_actions
+		self.number_of_states = environment.get_number_of_states()
+		self.number_of_actions = environment.get_number_of_actions()
 
 		self.q_table = np.zeros((self.number_of_states, self.number_of_actions))
 
