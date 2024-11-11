@@ -67,7 +67,7 @@ def generate_episode(episode, env, agent, visualizer=None, debug=False):
     # return the result of the game
     return rewards, episode_visit_count, current_state, win
 
-def run_trials(agent_class):
+def run_trials(agent_class, alpha=None, gamma=None, epsilon=None, debug=False):
     """
 	Based on the agent type passed in, run many agents for a certain amount of episodes and gather metrics on their performance
 
@@ -87,7 +87,8 @@ def run_trials(agent_class):
             if agent_class == PerfectAgent:
                 agent = agent_class(environment) 
             else:
-                agent = agent_class(environment.get_number_of_states(), environment.get_number_of_actions())
+                agent = agent_class(environment.get_number_of_states(), environment.get_number_of_actions(),
+                                alpha=alpha, gamma=gamma, epsilon=epsilon)
             # initialize arrays for keeping track of agent performance over time
             episode_rewards = []
             win_status = []
@@ -95,7 +96,7 @@ def run_trials(agent_class):
             wins = 0
             for i in range(EPISODE_COUNT): 
                 # play game
-                rewards, episode_visit_count, final_state, win = generate_episode(i, environment, agent, debug=True) #, visualizer=visualizer
+                rewards, episode_visit_count, final_state, win = generate_episode(i, environment, agent, debug=debug) #, visualizer=visualizer
                 episode_rewards.append(sum(rewards))
                 win_status.append(1 if win else 0)
                 wins += win
@@ -137,70 +138,33 @@ def run_trials(agent_class):
     return avg_rewards, avg_wins, visit_count, np.mean(all_wins, axis=0), all_V_t
 
 def run_trials_with_hyperparams(agent_class, alpha_values, gamma_values, epsilon_values):
-
-    environment = PongEnv(grid_size=10)
-    #visualizer = PongVisualizer(grid_size=10, cell_size=60)
     best_avg_reward = -np.inf
     best_params = None
+
     for alpha in alpha_values:
         for gamma in gamma_values:
             for epsilon in epsilon_values:
                 print(f"Training {agent_class.__name__} with alpha={alpha}, gamma={gamma}, epsilon={epsilon}...")
-                # establish metrics for each agent
-                total_rewards = []
-                all_rewards = []
-                all_wins = []
-                total_wins = 0
-                visit_count = np.zeros((environment.get_number_of_states(), environment.get_number_of_actions()))
-                for i in range(AGENT_COUNT):
-                    agent = agent_class(environment.get_number_of_states(), environment.get_number_of_actions())
-                    # initialize arrays for keeping track of agent performance over time
-                    episode_rewards = []
-                    win_status = []
-                    V_t = np.zeros((EPISODE_COUNT,1))  # percent states visited per episod
-                    wins = 0
-                    for i in range(EPISODE_COUNT): 
-                        # play game
-                        rewards, episode_visit_count, final_state, win = generate_episode(i, environment, agent) #, visualizer=visualizer
-                        episode_rewards.append(sum(rewards))
-                        win_status.append(1 if win else 0)
-                        wins += win
-                        v_t = agent.get_state_actn_visits()
-                        V_t[i,0] = (v_t/agent.get_number_of_states())*100
-                        #agent.clear_trajectory()
-                    total_rewards.append(np.mean(episode_rewards))
-                    all_rewards.append(episode_rewards)
-                    total_wins += wins
-                    all_wins.append(win_status)
-                    visit_count += episode_visit_count
-                    #visualizer.close()
                 
-                avg_reward = np.mean(total_rewards)
-                avg_win_rate = total_wins / (AGENT_COUNT * EPISODE_COUNT)
+                avg_rewards, avg_wins, visit_count, all_wins, all_V_t = run_trials(
+                    agent_class, alpha=alpha, gamma=gamma, epsilon=epsilon
+                )
                 
-                # Calculate average reward over the last 30 episodes for each agent
-                avg_reward_last_30 = np.mean([np.mean(agent_rewards) for agent_rewards in all_rewards])
+                avg_reward = np.mean(avg_rewards)
 
-                # Calculate average win rate over the last 30 episodes
-                recent_wins = np.mean([win_status[-30:] for win_status in all_wins], axis=0)
-                avg_wins_last_30 = np.mean(recent_wins)  
-
-                # Update the best parameters if current average reward is higher
                 if avg_reward > best_avg_reward:
                     best_avg_reward = avg_reward
                     best_params = (alpha, gamma, epsilon)
 
-                print(f"Average Rewards (last 30 episodes): {avg_reward_last_30:.2f}, Average Win Rate (last 30 episodes): {avg_wins_last_30:.2%}")
-    
-    if best_params is not None:
-        print("\n" + "*" * 50)  # Decorative line
+    if best_params:
+        print("\n" + "*" * 50)
         print(f"***** Best Parameters Found *****")
         print(f"* Alpha:    {best_params[0]:.4f}")
         print(f"* Gamma:    {best_params[1]:.4f}")
         print(f"* Epsilon:  {best_params[2]:.4f}")
         print(f"* Avg Reward: {best_avg_reward:.2f}")
-        print("*" * 50 + "\n")  # Decorative line
-
+        print("*" * 50 + "\n")
+        
 #TODO - remove! this just checks that all state index values are unique
 def verify_get_state_index(env):
     unique_indices = set()
@@ -278,7 +242,7 @@ if __name__ == '__main__':
     metrics.plot_state_action_distribution(visit_count=perfect_visit_count, agent_name="Perfect", save_path=METRICS_PATH)
     metrics.plot_state_action_distribution(visit_count=sarsa_visit_count, agent_name="SARSA", save_path=METRICS_PATH)
     metrics.plot_state_action_distribution(visit_count=qlearning_visit_count, agent_name="Q-Learning", save_path=METRICS_PATH)
-
+    
     #verify_get_state_index(PongEnv())
     
     # Tune hyperparameters
@@ -287,10 +251,10 @@ if __name__ == '__main__':
     epsilon_values = [0.1, 0.2, 0.5]  # Example exploration rates
 
     # Run experiments for SARSA
-    #run_trials_with_hyperparams(SARSA_0, alpha_values, gamma_values, epsilon_values)
+    run_trials_with_hyperparams(SARSA_0, alpha_values, gamma_values, epsilon_values)
 
     # Run experiments for Q-Learning
-    #run_trials_with_hyperparams(QLearingAgent, alpha_values, gamma_values, epsilon_values)
+    run_trials_with_hyperparams(QLearingAgent, alpha_values, gamma_values, epsilon_values)
 
 
 	
