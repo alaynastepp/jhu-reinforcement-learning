@@ -2,11 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+from typing import List, Tuple, Dict, Type, Union
 
 #from basicPongEnv import PongEnv
 #from exampleAgent import Agent
 from alaynaEnv import PongEnv
-from QLearning_agent import QLearingAgent
+from QLearning_agent import QLearningAgent
 from SARSA_agent import SARSA_0
 from perfectAgent import PerfectAgent
 from pongVisualizer import PongVisualizer
@@ -23,7 +24,7 @@ METRICS_PATH = os.path.join(HERE, 'experiment1')
 if METRICS_PATH and not os.path.exists(METRICS_PATH):
         os.makedirs(METRICS_PATH)
         
-def generate_episode(episode, env, agent, visualizer=None, debug=False):
+def generate_episode(episode: int, env: PongEnv, agent, visualizer=None, debug: bool = False) -> Tuple[List[float], np.ndarray, Tuple, bool]:
     """
     Play one episode in the environment using the agent and collect rewards.
 
@@ -31,6 +32,7 @@ def generate_episode(episode, env, agent, visualizer=None, debug=False):
     :param env (PongEnv): The Pong environment.
     :param agent: The agent that interacts with the environment.
     :param visualizer: Optional visualizer to render each step.
+    :param debug (bool): If True, prints debug information.
     :return rewards (list): List of rewards collected in the episode.
     :return final_state (tuple): The final state after the episode ends.
     """
@@ -67,11 +69,21 @@ def generate_episode(episode, env, agent, visualizer=None, debug=False):
     # return the result of the game
     return rewards, episode_visit_count, current_state, win
 
-def run_trials(agent_class, alpha=None, gamma=None, epsilon=None, debug=False):
+def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent]], alpha: float = 0.1, gamma: float = 0.9, epsilon: float = 0.2, debug: bool = False) -> Dict[str, Union[float, np.ndarray, List[float]]]:
     """
 	Based on the agent type passed in, run many agents for a certain amount of episodes and gather metrics on their performance
 
-	:param agent_class (class): One of the following: "SARSA_0", "QLearningAgent"
+	:param agent_class (class): One of the following: SARSA_0, QLearningAgent, or PerfectAgent.
+    :param alpha (float): Learning rate.
+    :param gamma (float): Discount factor.
+    :param epsilon (float): Exploration rate.
+    :param debug (bool): If True, enables debug mode.
+    :return Dict containing the following metrics:
+            'avg_rewards': np.ndarray - Average rewards over all agents.
+            'avg_wins': float - Overall win rate.
+            'state_action_visit_count': np.ndarray - Visit counts for each state-action pair.
+            'win_statuses': np.ndarray - Array of win status for each episode.
+            'state_visit_percentages': List[float] - State visit percentages across episodes.
 	"""
     environment = PongEnv(grid_size=10)
     #visualizer = PongVisualizer(grid_size=10, cell_size=60)
@@ -135,9 +147,24 @@ def run_trials(agent_class, alpha=None, gamma=None, epsilon=None, debug=False):
 
     metrics.pretty_print_metrics(avg_rewards_last_30, avg_wins_last_30, percentage_visited_0_to_450, percentage_visited_450_to_900)
     
-    return avg_rewards, avg_wins, visit_count, np.mean(all_wins, axis=0), all_V_t
+    #return avg_rewards, avg_wins, visit_count, np.mean(all_wins, axis=0), all_V_t
+    return {
+        'avg_rewards': avg_rewards,
+        'avg_wins': avg_wins,
+        'state_action_visit_count': visit_count,
+        'win_statuses': np.mean(all_wins, axis=0),
+        'state_visit_percentages': all_V_t
+    }
 
-def run_trials_with_hyperparams(agent_class, alpha_values, gamma_values, epsilon_values):
+def run_trials_with_hyperparams(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent]], alpha_values: List[float], gamma_values: List[float], epsilon_values: List[float]) -> None:
+    """
+    Runs multiple trials with different hyperparameter values and identifies the best configuration.
+
+    :param agent_class: The agent class to use for training.
+    :param alpha_values: A list of possible alpha (learning rate) values.
+    :param gamma_values: A list of possible gamma (discount factor) values.
+    :param epsilon_values: A list of possible epsilon (exploration rate) values.
+    """
     best_avg_reward = -np.inf
     best_params = None
 
@@ -146,11 +173,11 @@ def run_trials_with_hyperparams(agent_class, alpha_values, gamma_values, epsilon
             for epsilon in epsilon_values:
                 print(f"Training {agent_class.__name__} with alpha={alpha}, gamma={gamma}, epsilon={epsilon}...")
                 
-                avg_rewards, avg_wins, visit_count, all_wins, all_V_t = run_trials(
+                metrics = run_trials(
                     agent_class, alpha=alpha, gamma=gamma, epsilon=epsilon
                 )
                 
-                avg_reward = np.mean(avg_rewards)
+                avg_reward = np.mean(metrics['avg_rewards'])
 
                 if avg_reward > best_avg_reward:
                     best_avg_reward = avg_reward
@@ -205,43 +232,76 @@ def verify_get_state_index(env):
 
 if __name__ == '__main__':
     
-    # Run Perfect Agent
     print("Running Perfect agent...")
-    perfect_rewards, perfect_wins, perfect_visit_count, perfect_win_status, perfect_all_v_t = run_trials(PerfectAgent)
-
-	# Train SARSA agent
+    perfect_metrics = run_trials(PerfectAgent, debug=True)
+    
     print("Training SARSA agent...")
-    sarsa_rewards, sarsa_wins, sarsa_visit_count, sarsa_win_status, sarsa_all_v_t = run_trials(SARSA_0)
-
-    # Train Q-Learning agent
+    sarsa_metrics = run_trials(SARSA_0, debug=True)
+    
     print("Training Q-Learning agent...")
-    qlearning_rewards, qlearning_wins, qlearning_visit_count, qlearning_win_status, qlearning_all_v_t = run_trials(QLearingAgent)
+    qlearning_metrics = run_trials(QLearningAgent, debug=True)
+
+    # Plot cumulative returns
+    metrics.plot_cumulative_return(
+        avg_rewards1=perfect_metrics["avg_rewards"],
+        agent1_label="Perfect",
+        avg_rewards2=sarsa_metrics["avg_rewards"],
+        agent2_label="SARSA",
+        avg_rewards3=qlearning_metrics["avg_rewards"],
+        agent3_label="Q-Learning",
+        save_path=METRICS_PATH
+    )
     
-    metrics.plot_cumulative_return(avg_rewards1=perfect_rewards, agent1_label="Perfect", avg_rewards2=sarsa_rewards, agent2_label="SARSA", avg_rewards3=qlearning_rewards, agent3_label="Q-Learning", save_path=METRICS_PATH)
+    # Plot state visitation
+    metrics.plot_state_visitation(perfect_metrics["state_visit_percentages"], "Perfect", save_path=METRICS_PATH)
+    metrics.plot_state_visitation(sarsa_metrics["state_visit_percentages"], "SARSA", save_path=METRICS_PATH)
+    metrics.plot_state_visitation(qlearning_metrics["state_visit_percentages"], "Q-Learning", save_path=METRICS_PATH)
+
+    # Plot visit percentage
+    metrics.plot_visit_percentage(agent_name="Perfect", visit_count=perfect_metrics["state_action_visit_count"], save_path=METRICS_PATH)
+    metrics.plot_visit_percentage(agent_name="SARSA", visit_count=sarsa_metrics["state_action_visit_count"], save_path=METRICS_PATH)
+    metrics.plot_visit_percentage(agent_name="Q-Learning", visit_count=qlearning_metrics["state_action_visit_count"], save_path=METRICS_PATH)
+
+    # Plot winning percentage
+    metrics.plot_winning_percentage(
+        agent1_label="Perfect",
+        avg_wins1=perfect_metrics["avg_wins"],
+        agent2_label="SARSA",
+        avg_wins2=sarsa_metrics["avg_wins"],
+        agent3_label="Q-Learning",
+        avg_wins3=qlearning_metrics["avg_wins"],
+        save_path=METRICS_PATH
+    )
+
+    # Plot winning percentage over episodes
+    metrics.plot_winning_percentage_over_episodes(
+        agent1_wins=perfect_metrics["win_statuses"],
+        agent1_label="Perfect",
+        agent2_wins=sarsa_metrics["win_statuses"],
+        agent2_label="SARSA",
+        agent3_wins=qlearning_metrics["win_statuses"],
+        agent3_label="Q-Learning",
+        save_path=METRICS_PATH
+    )
+
+    # Additional metrics plots
+    metrics.plot_mean_visited_states_percentage(
+        visit_count1=perfect_metrics["state_action_visit_count"],
+        agent1_label="Perfect",
+        visit_count2=sarsa_metrics["state_action_visit_count"],
+        agent2_label="SARSA",
+        visit_count3=qlearning_metrics["state_action_visit_count"],
+        agent3_label="Q-Learning",
+        save_path=METRICS_PATH
+    )
     
-    metrics.plot_state_visitation(perfect_all_v_t, "Perfect", save_path=METRICS_PATH)
-    metrics.plot_state_visitation(sarsa_all_v_t, "SARSA", save_path=METRICS_PATH)
-    metrics.plot_state_visitation(qlearning_all_v_t, "Q-Learning", save_path=METRICS_PATH)
-    
-    metrics.plot_visit_percentage(agent_name="Perfect", visit_count=perfect_visit_count, save_path=METRICS_PATH)
-    metrics.plot_visit_percentage(agent_name="SARSA", visit_count=sarsa_visit_count, save_path=METRICS_PATH)
-    metrics.plot_visit_percentage(agent_name="Q-Learning", visit_count=qlearning_visit_count, save_path=METRICS_PATH)
-    
-    metrics.plot_winning_percentage(agent1_label="Perfect", avg_wins1=perfect_wins, agent2_label="SARSA", avg_wins2=sarsa_wins, agent3_label="Q-Learning", avg_wins3=qlearning_wins, save_path=METRICS_PATH)
-    
-    metrics.plot_winning_percentage_over_episodes(agent1_wins=perfect_win_status, agent1_label="Perfect", agent2_wins=sarsa_win_status, agent2_label="SARSA", agent3_wins=qlearning_win_status, agent3_label="Q-Learning", save_path=METRICS_PATH)
-    
-    metrics.plot_mean_visited_states_percentage(visit_count1=perfect_visit_count, agent1_label="Perfect", visit_count2=sarsa_visit_count, agent2_label="SARSA", visit_count3=qlearning_visit_count, agent3_label="Q-Learning", save_path=METRICS_PATH)
-    
-    metrics.plot_mean_visited_states_per_action(visit_count=perfect_visit_count, agent_name="Perfect", save_path=METRICS_PATH)
-    metrics.plot_mean_visited_states_per_action(visit_count=sarsa_visit_count, agent_name="SARSA", save_path=METRICS_PATH)
-    metrics.plot_mean_visited_states_per_action(visit_count=qlearning_visit_count, agent_name="Q-Learning", save_path=METRICS_PATH)
-    
-    metrics.plot_state_action_distribution(visit_count=perfect_visit_count, agent_name="Perfect", save_path=METRICS_PATH)
-    
-    metrics.plot_state_action_distribution(visit_count=perfect_visit_count, agent_name="Perfect", save_path=METRICS_PATH)
-    metrics.plot_state_action_distribution(visit_count=sarsa_visit_count, agent_name="SARSA", save_path=METRICS_PATH)
-    metrics.plot_state_action_distribution(visit_count=qlearning_visit_count, agent_name="Q-Learning", save_path=METRICS_PATH)
+    metrics.plot_mean_visited_states_per_action(visit_count=perfect_metrics["state_action_visit_count"], agent_name="Perfect", save_path=METRICS_PATH)
+    metrics.plot_mean_visited_states_per_action(visit_count=sarsa_metrics["state_action_visit_count"], agent_name="SARSA", save_path=METRICS_PATH)
+    metrics.plot_mean_visited_states_per_action(visit_count=qlearning_metrics["state_action_visit_count"], agent_name="Q-Learning", save_path=METRICS_PATH)
+
+    metrics.plot_state_action_distribution(visit_count=perfect_metrics["state_action_visit_count"], agent_name="Perfect", save_path=METRICS_PATH)
+    metrics.plot_state_action_distribution(visit_count=sarsa_metrics["state_action_visit_count"], agent_name="SARSA", save_path=METRICS_PATH)
+    metrics.plot_state_action_distribution(visit_count=qlearning_metrics["state_action_visit_count"], agent_name="Q-Learning", save_path=METRICS_PATH)
     
     #verify_get_state_index(PongEnv())
     
@@ -254,7 +314,7 @@ if __name__ == '__main__':
     run_trials_with_hyperparams(SARSA_0, alpha_values, gamma_values, epsilon_values)
 
     # Run experiments for Q-Learning
-    run_trials_with_hyperparams(QLearingAgent, alpha_values, gamma_values, epsilon_values)
+    run_trials_with_hyperparams(QLearningAgent, alpha_values, gamma_values, epsilon_values)
 
 
 	

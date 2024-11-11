@@ -1,11 +1,11 @@
 import numpy as np
 
-class QLearingAgent:
+class QLearningAgent:
     """
     RL Q-Learning agent for Pong
     """
 
-    def __init__(self, num_states, num_actions, alpha=0.1, gamma=0.9, epsilon=0.2):
+    def __init__(self, num_states: int, num_actions: int, alpha: float = 0.1, gamma: float = 0.9, epsilon: float = 0.2) -> None:
         """
         Initializes the Q-Learning Agent with parameters and the Q-table.
 
@@ -27,7 +27,7 @@ class QLearingAgent:
         self.action = 0
         self.state_actn_pairs = {}
 
-    def get_number_of_states(self):
+    def get_number_of_states(self) -> int:
         """
         Returns the number of states in the environment.
         
@@ -43,7 +43,7 @@ class QLearingAgent:
         """
         return self.number_of_actions
     
-    def get_state_actn_visits(self):
+    def get_state_actn_visits(self) -> int:
         """
         Calculates the total number of visits to state-action pairs.
 
@@ -52,7 +52,7 @@ class QLearingAgent:
         sum_visits = sum(list(self.state_actn_pairs.values()))
         return sum_visits
 
-    def e_greedy(self, actions):
+    def e_greedy(self, actions: list[float]) -> int:
         """
         Selects an action based on the epsilon-greedy strategy, favoring the
         best-known action with a probability of (1 - epsilon) and random action
@@ -71,11 +71,11 @@ class QLearingAgent:
             idx = rng.integers(low=0, high=b)
             return a[idx]
          
-    def select_action(self, state_index):
+    def select_action(self, state_index: int) -> int:
         """
         Selects an action based on epsilon-greedy policy.
 
-        :param state index (int): Current state as an integer
+        :param state_index (int): Current state as an integer
         :return (int): Action to take (0: stay, 1: up, 2: down)
         """
         self.state = state_index
@@ -87,7 +87,7 @@ class QLearingAgent:
             
         return action
 
-    def update(self, new_state_index, reward):
+    def update(self, new_state_index: int, reward: float) -> None:
         """
         Updates Q-table based on the agent's experience.
 
@@ -99,7 +99,7 @@ class QLearingAgent:
         max_q = max(self.q_table[new_state_index, ])
         self.q_table[self.state,self.action]=q+self.alpha*(reward+self.gamma*max_q-q)
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Resets the Q-table and other agent-specific parameters for a new episode.
         """

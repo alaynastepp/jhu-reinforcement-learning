@@ -53,7 +53,7 @@ class SARSA_0:
         sum_visits = sum(list(self.state_actn_pairs.values()))
         return sum_visits
     
-    def e_greedy(self, actions):
+    def e_greedy(self, actions: list[float]) -> int:
         """
         Selects an action based on the epsilon-greedy strategy, favoring the
         best-known action with a probability of (1 - epsilon) and random action
@@ -78,43 +78,48 @@ class SARSA_0:
             idx = rng.integers(low=0, high=b)
             return idx
         
-    def select_action(self, state):
+    def select_action(self, state_index: int) -> int:
         """
         Selects an action based on epsilon-greedy policy.
 
-        :param state index (int): Current state as an integer
+        :param state_index (int): Current state as an integer
         :return (int): Action to take (0: stay, 1: up, 2: down)
         """
-        self.state = state
+        self.state = state_index
         if self.next_action < 0:
-            actions = self.q_table[state, ]
+            actions = self.q_table[state_index, ]
             action = self.e_greedy(actions)
         else:
             action = self.next_action
         self.action = action
-        if not((state,action) in self.state_actn_pairs):
-            self.state_actn_pairs[(state,action)] = 1
+        if not((state_index,action) in self.state_actn_pairs):
+            self.state_actn_pairs[(state_index,action)] = 1
         return action
 
-    def set_future_action(self, new_state):
-        actions = self.q_table[new_state, ]
+    def set_future_action(self, new_state_index: int) -> None:
+        """
+        Sets the future action for the next state using epsilon-greedy selection.
+
+        :param new_state_index: Index of the new state.
+        """
+        actions = self.q_table[new_state_index, ]
         action = self.e_greedy(actions)
-        self.next_q = self.q_table[new_state, action]
+        self.next_q = self.q_table[new_state_index, action]
         self.next_action = action
         
-    def update(self, new_state, reward):
+    def update(self, new_state_index: int, reward: float) -> None:
         """
         Updates Q-table based on the agent's experience.
 
         :param new_state_index (int): New state index after taking action
         :param reward (float): Reward received
         """
-        self.set_future_action(new_state)
-        self.next_state = new_state
+        self.set_future_action(new_state_index)
+        self.next_state = new_state_index
         q =  self.q_table[self.state, self.action]
         self.q_table[self.state,self.action]=q+self.alpha*(reward+self.gamma*self.next_q-q)
         
-    def reset(self):
+    def reset(self) -> None:
         """
         Resets the Q-table and other agent-specific parameters for a new episode.
         """
