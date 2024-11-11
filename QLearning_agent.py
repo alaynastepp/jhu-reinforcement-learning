@@ -25,7 +25,6 @@ class QLearingAgent:
         self.next_state = 0
         self.reward = 0
         self.action = 0
-        self.turn = 0
         self.state_actn_pairs = {}
 
     def get_number_of_states(self):
@@ -79,7 +78,6 @@ class QLearingAgent:
         :param state index (int): Current state as an integer
         :return (int): Action to take (0: stay, 1: up, 2: down)
         """
-        self.turn += 1
         self.state = state_index
         actions = self.q_table[state_index, ]
         action = self.e_greedy(actions)
@@ -100,7 +98,6 @@ class QLearingAgent:
         q = self.q_table[self.state, self.action]
         max_q = max(self.q_table[new_state_index, ])
         self.q_table[self.state,self.action]=q+self.alpha*(reward+self.gamma*max_q-q)
-        #print(f"Turn = {self.turn} \nQ = {self.q_table}")
 
     def reset(self):
         """
@@ -112,4 +109,3 @@ class QLearingAgent:
         self.next_state = 0
         self.reward = 0
         self.action = 0
-        self.turn = 0

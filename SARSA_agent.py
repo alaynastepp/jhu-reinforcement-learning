@@ -26,7 +26,6 @@ class SARSA_0:
         self.next_q = 0
         self.reward = 0
         self.action = 0
-        self.turn = 0
         self.state_actn_pairs = {}
 
     def get_number_of_states(self):
@@ -115,7 +114,6 @@ class SARSA_0:
         self.next_state = new_state
         q =  self.q_table[self.state, self.action]
         self.q_table[self.state,self.action]=q+self.alpha*(reward+self.gamma*self.next_q-q)
-        #print(f"Turn = {self.turn} \nQ = {self.q_table}")
         
     def reset(self):
         """
@@ -129,4 +127,3 @@ class SARSA_0:
         self.next_q = 0
         self.reward = 0
         self.action = 0
-        self.turn = 0
