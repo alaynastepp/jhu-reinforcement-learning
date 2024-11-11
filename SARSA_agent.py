@@ -43,7 +43,16 @@ class SARSA_0:
         :return (int): Number of actions.
         """
         return self.number_of_actions
+    
+    def get_state_actn_visits(self):
+        """
+        Calculates the total number of visits to state-action pairs.
 
+        :return (int): Sum of visits to each state-action pair.
+        """
+        sum_visits = sum(list(self.state_actn_pairs.values()))
+        return sum_visits
+    
     def e_greedy(self, actions):
         """
         Selects an action based on the epsilon-greedy strategy, favoring the
@@ -68,15 +77,6 @@ class SARSA_0:
             b = actions.size
             idx = rng.integers(low=0, high=b)
             return idx
-    
-    def get_state_actn_visits(self):
-        """
-        Calculates the total number of visits to state-action pairs.
-
-        :return (int): Sum of visits to each state-action pair.
-        """
-        sum_visits = sum(list(self.state_actn_pairs.values()))
-        return sum_visits
         
     def select_action(self, state):
         """
@@ -101,7 +101,6 @@ class SARSA_0:
         action = self.e_greedy(actions)
         self.next_q = self.q_table[new_state, action]
         self.next_action = action
-        
         
     def update(self, new_state, reward):
         """

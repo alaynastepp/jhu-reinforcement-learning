@@ -54,9 +54,9 @@ def plot_cumulative_return(avg_rewards1, agent1_label, avg_rewards2, agent2_labe
 def plot_mean_visited_states_percentage(visit_count1, agent1_label, visit_count2, agent2_label, visit_count3, agent3_label, save_path=None):
     visited_states1 = np.sum(visit_count1 > 0) / visit_count1.size * 100
     visited_states2 = np.sum(visit_count2 > 0) / visit_count2.size * 100
-    visited_states_perfect = np.sum(visit_count3 > 0) / visit_count3.size * 100
+    visited_states3 = np.sum(visit_count3 > 0) / visit_count3.size * 100
     plt.figure(figsize=(10, 6))
-    plt.bar([agent1_label, agent2_label, agent3_label], [visited_states1, visited_states2, visited_states_perfect], color=['green', 'purple', 'green'])
+    plt.bar([agent1_label, agent2_label, agent3_label], [visited_states1, visited_states2, visited_states3], color=['blue', 'orange', 'green'])
     plt.ylabel("Mean Percentage of Visited States (%)")
     plt.title("Mean Percentage of Visited States Comparison")
     if save_path:
@@ -108,5 +108,27 @@ def plot_state_action_distribution(visit_count, agent_name, save_path=None):
     plt.grid()
     if save_path:
         file_path = os.path.join(save_path, f"{agent_name.lower()}_state_action_distribution.png")
+        plt.savefig(file_path)
+    plt.show()
+
+def plot_state_visitation(all_V_t, agent_class_name, save_path=None):
+    """
+    Plots the state visitation percentage (V_t) over episodes for all agents combined.
+
+    :param all_V_t: A list containing the V_t data for each agent, where each entry is a 1D numpy array of size (episodes,).
+    :param agent_class_name: The name of the agent class (e.g., 'SARSA_0' or 'QLearningAgent') to label the plot.
+    """
+    # Combine V_t data from all agents
+    combined_V_t = np.mean(all_V_t, axis=0)  # Average over all agents for each episode
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(len(combined_V_t)), combined_V_t, label=f'{agent_class_name} State Visitation', color='b')
+    plt.xlabel('Episode')
+    plt.ylabel('Percentage of States Visited')
+    plt.title(f'{agent_class_name} - State Visitation (V_t) Over Episodes (All Agents)')
+    plt.legend(loc='best')
+    plt.grid(True)
+    plt.tight_layout()
+    if save_path:
+        file_path = os.path.join(save_path, f"{agent_class_name.lower()}_state_visualization.png")
         plt.savefig(file_path)
     plt.show()

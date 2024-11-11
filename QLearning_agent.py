@@ -42,6 +42,15 @@ class QLearingAgent:
         :return (int): Number of actions.
         """
         return self.number_of_actions
+    
+    def get_state_actn_visits(self):
+        """
+        Calculates the total number of visits to state-action pairs.
+
+        :return (int): Sum of visits to each state-action pair.
+        """
+        sum_visits = sum(list(self.state_actn_pairs.values()))
+        return sum_visits
 
     def e_greedy(self, actions):
         """
@@ -61,16 +70,7 @@ class QLearingAgent:
             rng = np.random.default_rng()
             idx = rng.integers(low=0, high=b)
             return a[idx]
-    
-    def get_state_actn_visits(self):
-        """
-        Calculates the total number of visits to state-action pairs.
-
-        :return (int): Sum of visits to each state-action pair.
-        """
-        sum_visits = sum(list(self.state_actn_pairs.values()))
-        return sum_visits
-        
+         
     def select_action(self, state_index):
         """
         Selects an action based on epsilon-greedy policy.

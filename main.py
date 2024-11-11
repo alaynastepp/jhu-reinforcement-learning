@@ -75,39 +75,44 @@ def run_trials(agent_class):
 	"""
     environment = PongEnv(grid_size=10)
     #visualizer = PongVisualizer(grid_size=10, cell_size=60)
-    # TODO: establish metrics for each agent
     all_rewards = []
     all_wins = []
     total_wins = 0
-    visit_count = np.zeros((environment.get_number_of_states(), environment.get_number_of_actions()))
-    for i in range(AGENT_COUNT):
-        if agent_class == PerfectAgent:
-            agent = agent_class(environment) 
-        else:
-            agent = agent_class(environment.get_number_of_states(), environment.get_number_of_actions())
-        # TODO: initialize arrays for keeping track of agent performance over time
-        episode_rewards = []
-        win_status = []
-        V_t = np.zeros((EPISODE_COUNT,1))  # percent states visited per episod
-        wins = 0
-        for i in range(EPISODE_COUNT): 
-            # play game
-            rewards, episode_visit_count, final_state, win = generate_episode(i, environment, agent, debug=True) #, visualizer=visualizer
-            episode_rewards.append(sum(rewards))
-            win_status.append(1 if win else 0)
-            wins += win
-            # TODO: record metrics
-            if agent_class != PerfectAgent:
-                v_t = agent.get_state_actn_visits()
-                V_t[i,0] = (v_t/agent.get_number_of_states())*100
-            #agent.clear_trajectory()
-        print("EPISODE REWARDS ", episode_rewards)
-        # TODO: return arrays full of metrics averaged over all agents
-        all_rewards.append(episode_rewards)
-        total_wins += wins
-        all_wins.append(win_status)
-        visit_count += episode_visit_count
-        #visualizer.close()
+    visit_count = np.zeros((environment.get_number_of_states(), environment.get_number_of_actions())) #raw count of how many times a specific state-action pair has been visited across episodes
+    all_V_t = [] #percentage of the total states that have been visited 
+    
+    reward_file_name = f"{agent_class.__name__}_episode_rewards.txt"
+    with open(reward_file_name, "w") as reward_file:
+        for i in range(AGENT_COUNT):
+            if agent_class == PerfectAgent:
+                agent = agent_class(environment) 
+            else:
+                agent = agent_class(environment.get_number_of_states(), environment.get_number_of_actions())
+            # initialize arrays for keeping track of agent performance over time
+            episode_rewards = []
+            win_status = []
+            V_t = np.zeros((EPISODE_COUNT,1))  # percent states visited per episode
+            wins = 0
+            for i in range(EPISODE_COUNT): 
+                # play game
+                rewards, episode_visit_count, final_state, win = generate_episode(i, environment, agent, debug=True) #, visualizer=visualizer
+                episode_rewards.append(sum(rewards))
+                win_status.append(1 if win else 0)
+                wins += win
+                if agent_class != PerfectAgent:
+                    v_t = agent.get_state_actn_visits()
+                    V_t[i,0] = (v_t/agent.get_number_of_states())*100
+                #agent.clear_trajectory() 
+            
+            all_rewards.append(episode_rewards)
+            total_wins += wins
+            all_wins.append(win_status)
+            visit_count += episode_visit_count
+            all_V_t.append(V_t.flatten())
+            
+            for reward in episode_rewards:
+                reward_file.write(f"{reward}\n")
+            #visualizer.close()
         
     avg_rewards = np.mean(all_rewards, axis=0)
     avg_wins = total_wins / (AGENT_COUNT * EPISODE_COUNT)  # Calculate win rate
@@ -128,8 +133,8 @@ def run_trials(agent_class):
     percentage_visited_450_to_900 = np.sum(visit_count_450_to_900 > 0) / visit_count_450_to_900.size * 100 
 
     metrics.pretty_print_metrics(avg_rewards_last_30, avg_wins_last_30, percentage_visited_0_to_450, percentage_visited_450_to_900)
-
-    return avg_rewards, avg_wins, visit_count, np.mean(all_wins, axis=0)
+    
+    return avg_rewards, avg_wins, visit_count, np.mean(all_wins, axis=0), all_V_t
 
 def run_trials_with_hyperparams(agent_class, alpha_values, gamma_values, epsilon_values):
 
@@ -141,7 +146,7 @@ def run_trials_with_hyperparams(agent_class, alpha_values, gamma_values, epsilon
         for gamma in gamma_values:
             for epsilon in epsilon_values:
                 print(f"Training {agent_class.__name__} with alpha={alpha}, gamma={gamma}, epsilon={epsilon}...")
-                # TODO: establish metrics for each agent
+                # establish metrics for each agent
                 total_rewards = []
                 all_rewards = []
                 all_wins = []
@@ -149,7 +154,7 @@ def run_trials_with_hyperparams(agent_class, alpha_values, gamma_values, epsilon
                 visit_count = np.zeros((environment.get_number_of_states(), environment.get_number_of_actions()))
                 for i in range(AGENT_COUNT):
                     agent = agent_class(environment.get_number_of_states(), environment.get_number_of_actions())
-                    # TODO: initialize arrays for keeping track of agent performance over time
+                    # initialize arrays for keeping track of agent performance over time
                     episode_rewards = []
                     win_status = []
                     V_t = np.zeros((EPISODE_COUNT,1))  # percent states visited per episod
@@ -160,11 +165,9 @@ def run_trials_with_hyperparams(agent_class, alpha_values, gamma_values, epsilon
                         episode_rewards.append(sum(rewards))
                         win_status.append(1 if win else 0)
                         wins += win
-                        # TODO: record metrics
                         v_t = agent.get_state_actn_visits()
                         V_t[i,0] = (v_t/agent.get_number_of_states())*100
                         #agent.clear_trajectory()
-                    # TODO: return arrays full of metrics averaged over all agents
                     total_rewards.append(np.mean(episode_rewards))
                     all_rewards.append(episode_rewards)
                     total_wins += wins
@@ -188,6 +191,7 @@ def run_trials_with_hyperparams(agent_class, alpha_values, gamma_values, epsilon
                     best_params = (alpha, gamma, epsilon)
 
                 print(f"Average Rewards (last 30 episodes): {avg_reward_last_30:.2f}, Average Win Rate (last 30 episodes): {avg_wins_last_30:.2%}")
+    
     if best_params is not None:
         print("\n" + "*" * 50)  # Decorative line
         print(f"***** Best Parameters Found *****")
@@ -239,26 +243,38 @@ if __name__ == '__main__':
     
     # Run Perfect Agent
     print("Running Perfect agent...")
-    perfect_rewards, perfect_wins, perfect_visit_count, perfect_win_status = run_trials(PerfectAgent)
+    perfect_rewards, perfect_wins, perfect_visit_count, perfect_win_status, perfect_all_v_t = run_trials(PerfectAgent)
 
 	# Train SARSA agent
     print("Training SARSA agent...")
-    sarsa_rewards, sarsa_wins, sarsa_visit_count, sarsa_win_status = run_trials(SARSA_0)
+    sarsa_rewards, sarsa_wins, sarsa_visit_count, sarsa_win_status, sarsa_all_v_t = run_trials(SARSA_0)
 
     # Train Q-Learning agent
     print("Training Q-Learning agent...")
-    qlearning_rewards, qlearning_wins, qlearning_visit_count, qlearning_win_status = run_trials(QLearingAgent)
+    qlearning_rewards, qlearning_wins, qlearning_visit_count, qlearning_win_status, qlearning_all_v_t = run_trials(QLearingAgent)
     
     metrics.plot_cumulative_return(avg_rewards1=perfect_rewards, agent1_label="Perfect", avg_rewards2=sarsa_rewards, agent2_label="SARSA", avg_rewards3=qlearning_rewards, agent3_label="Q-Learning", save_path=METRICS_PATH)
+    
+    metrics.plot_state_visitation(perfect_all_v_t, "Perfect", save_path=METRICS_PATH)
+    metrics.plot_state_visitation(sarsa_all_v_t, "SARSA", save_path=METRICS_PATH)
+    metrics.plot_state_visitation(qlearning_all_v_t, "Q-Learning", save_path=METRICS_PATH)
+    
     metrics.plot_visit_percentage(agent_name="Perfect", visit_count=perfect_visit_count, save_path=METRICS_PATH)
     metrics.plot_visit_percentage(agent_name="SARSA", visit_count=sarsa_visit_count, save_path=METRICS_PATH)
     metrics.plot_visit_percentage(agent_name="Q-Learning", visit_count=qlearning_visit_count, save_path=METRICS_PATH)
+    
     metrics.plot_winning_percentage(agent1_label="Perfect", avg_wins1=perfect_wins, agent2_label="SARSA", avg_wins2=sarsa_wins, agent3_label="Q-Learning", avg_wins3=qlearning_wins, save_path=METRICS_PATH)
+    
     metrics.plot_winning_percentage_over_episodes(agent1_wins=perfect_win_status, agent1_label="Perfect", agent2_wins=sarsa_win_status, agent2_label="SARSA", agent3_wins=qlearning_win_status, agent3_label="Q-Learning", save_path=METRICS_PATH)
+    
     metrics.plot_mean_visited_states_percentage(visit_count1=perfect_visit_count, agent1_label="Perfect", visit_count2=sarsa_visit_count, agent2_label="SARSA", visit_count3=qlearning_visit_count, agent3_label="Q-Learning", save_path=METRICS_PATH)
+    
     metrics.plot_mean_visited_states_per_action(visit_count=perfect_visit_count, agent_name="Perfect", save_path=METRICS_PATH)
     metrics.plot_mean_visited_states_per_action(visit_count=sarsa_visit_count, agent_name="SARSA", save_path=METRICS_PATH)
     metrics.plot_mean_visited_states_per_action(visit_count=qlearning_visit_count, agent_name="Q-Learning", save_path=METRICS_PATH)
+    
+    metrics.plot_state_action_distribution(visit_count=perfect_visit_count, agent_name="Perfect", save_path=METRICS_PATH)
+    
     metrics.plot_state_action_distribution(visit_count=perfect_visit_count, agent_name="Perfect", save_path=METRICS_PATH)
     metrics.plot_state_action_distribution(visit_count=sarsa_visit_count, agent_name="SARSA", save_path=METRICS_PATH)
     metrics.plot_state_action_distribution(visit_count=qlearning_visit_count, agent_name="Q-Learning", save_path=METRICS_PATH)
@@ -276,5 +292,5 @@ if __name__ == '__main__':
     # Run experiments for Q-Learning
     #run_trials_with_hyperparams(QLearingAgent, alpha_values, gamma_values, epsilon_values)
 
-	# TODO: output and save metrics
+
 	
