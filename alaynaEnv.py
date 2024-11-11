@@ -111,7 +111,7 @@ class PongEnv:
         if self.ball_x == self.grid_size - 1:
             if self.paddle_y == self.ball_y:
                 self.score += 1
-                reward = +25
+                reward = +5
                 self.ball_dx *= -1  # reverse direction
                 
                 # Handle ball angle change based on paddle movement and ball direction
@@ -150,10 +150,10 @@ class PongEnv:
         self.ball_y = max(0, min(self.ball_y, self.grid_size - 1))
         
         self.current_step += 1
-        # Check if the game has timed out
+        # Check if the game has timed out, counts as a win
         if self.current_step >= self.max_steps:
             self.done = True  
-            reward = 0  
+            reward = 25 
         return self.get_state(), reward, self.done
     
     def render(self): 

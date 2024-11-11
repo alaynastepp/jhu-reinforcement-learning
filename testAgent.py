@@ -29,7 +29,7 @@ class TestAgent:
         else:
             return 0  # Stay still
 
-    def update(self, state_index, action, reward, next_state_index):
+    def update(self, next_state_index, reward):
         # Placeholder for agents that learn from experience (e.g., Q-learning)
         # TestAgent does not learn, so no updates are made here.
         pass
