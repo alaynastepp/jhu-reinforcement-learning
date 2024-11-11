@@ -1,13 +1,12 @@
 import numpy as np
 
-class QLearingAgent:
-    """
-    RL Q-Learning agent for Pong
-    """
+
+class SARSA_0:
+    """RL SARSA-0 agent for Pong"""
 
     def __init__(self, num_states, num_actions, alpha=0.1, gamma=0.9, epsilon=0.2):
         """
-        Initializes the Q-Learning Agent with parameters and the Q-table.
+        Initializes the SARSA agent with parameters and the Q-table.
 
         :param num_states (int): Number of possible states in the environment.
         :param num_actions (int): Number of possible actions.
@@ -23,6 +22,8 @@ class QLearingAgent:
         self.number_of_actions = num_actions
         self.state = 0
         self.next_state = 0
+        self.next_action = -1
+        self.next_q = 0
         self.reward = 0
         self.action = 0
         self.turn = 0
@@ -55,13 +56,19 @@ class QLearingAgent:
         """
         a = list(np.where(np.array(actions) == max(actions))[0])
         b = len(a)
-        if b < 2:
-            a_star_idx = np.argmax(actions)
-            return a_star_idx
+        rng = np.random.default_rng()
+        
+        if self.epsilon <= rng.random():
+            if b < 2:
+                a_star_idx = np.argmax(actions)
+                return a_star_idx
+            else:
+                idx = rng.integers(low=0, high=b)
+                return a[idx]
         else:
-            rng = np.random.default_rng()
+            b = actions.size
             idx = rng.integers(low=0, high=b)
-            return a[idx]
+            return idx
     
     def get_state_actn_visits(self):
         """
@@ -72,44 +79,54 @@ class QLearingAgent:
         sum_visits = sum(list(self.state_actn_pairs.values()))
         return sum_visits
         
-    def select_action(self, state_index):
+    def select_action(self, state):
         """
         Selects an action based on epsilon-greedy policy.
 
         :param state index (int): Current state as an integer
         :return (int): Action to take (0: stay, 1: up, 2: down)
         """
-        self.turn += 1
-        self.state = state_index
-        actions = self.q_table[state_index, ]
-        action = self.e_greedy(actions)
+        self.state = state
+        if self.next_action < 0:
+            actions = self.q_table[state, ]
+            action = self.e_greedy(actions)
+        else:
+            action = self.next_action
         self.action = action
-        if not((state_index,action) in self.state_actn_pairs):
-            self.state_actn_pairs[(state_index,action)] = 1
-            
+        if not((state,action) in self.state_actn_pairs):
+            self.state_actn_pairs[(state,action)] = 1
         return action
 
-    def update(self, new_state_index, reward):
+    def set_future_action(self, new_state):
+        actions = self.q_table[new_state, ]
+        action = self.e_greedy(actions)
+        self.next_q = self.q_table[new_state, action]
+        self.next_action = action
+        
+        
+    def update(self, new_state, reward):
         """
         Updates Q-table based on the agent's experience.
 
         :param new_state_index (int): New state index after taking action
         :param reward (float): Reward received
         """
-        self.next_state = new_state_index
-        q = self.q_table[self.state, self.action]
-        max_q = max(self.q_table[new_state_index, ])
-        self.q_table[self.state,self.action]=q+self.alpha*(reward+self.gamma*max_q-q)
+        self.set_future_action(new_state)
+        self.next_state = new_state
+        q =  self.q_table[self.state, self.action]
+        self.q_table[self.state,self.action]=q+self.alpha*(reward+self.gamma*self.next_q-q)
         #print(f"Turn = {self.turn} \nQ = {self.q_table}")
-
+        
     def reset(self):
         """
         Resets the Q-table and other agent-specific parameters for a new episode.
         """
         self.q_table = np.zeros((self.number_of_states, self.number_of_actions), dtype="float64")
-        self.state_actn_pairs1 = {}
+        self.state_actn_pairs = {}
         self.state = 0
         self.next_state = 0
+        self.next_action = -1
+        self.next_q = 0
         self.reward = 0
         self.action = 0
         self.turn = 0

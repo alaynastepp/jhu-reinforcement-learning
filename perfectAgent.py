@@ -2,7 +2,7 @@ import numpy as np
 """"
 Test agent for testing visualization class - knows the whole environment so will always no where to place paddle
 """
-class TestAgent:
+class PerfectAgent:
     def __init__(self, env):
         self.env = env
 

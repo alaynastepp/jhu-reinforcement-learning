@@ -23,42 +23,42 @@ def plot_visit_percentage(agent_name, visit_count):
     plt.title(f"{agent_name} State-Action Visit Percentage")
     plt.show()
     
-def plot_winning_percentage(avg_wins_sarsa, avg_wins_qlearning):
+def plot_winning_percentage(agent1_label, avg_wins1, agent2_label, avg_wins2):
     plt.figure(figsize=(8, 6))
-    plt.bar(["Perfect Agent", "Q-Learning"], [avg_wins_sarsa * 100, avg_wins_qlearning * 100], color=['blue', 'orange'])
+    plt.bar([agent1_label, agent2_label], [avg_wins1 * 100, avg_wins2 * 100], color=['blue', 'orange'])
     plt.ylabel("Mean Winning Percentage (%)")
     plt.title("Mean Winning Percentage Comparison")
     plt.show()
 
-def plot_cumulative_return(avg_rewards_sarsa, avg_rewards_qlearning):
+def plot_cumulative_return(avg_rewards1, agent1_label, avg_rewards2, agent2_label):
     plt.figure(figsize=(10, 6))
-    plt.plot(moving_average(avg_rewards_sarsa), label="Perfect Agent")
-    plt.plot(moving_average(avg_rewards_qlearning), label="Q-Learning (Off-policy)")
+    plt.plot(moving_average(avg_rewards1), label=agent1_label)
+    plt.plot(moving_average(avg_rewards2), label=agent2_label)
     plt.xlabel("Episodes")
     plt.ylabel("Mean Cumulative Return")
     plt.title("Mean Cumulative Return over Episodes")
     plt.legend()
     plt.show()
 
-def plot_mean_visited_states_old(visit_count_sarsa, visit_count_qlearning):
-    visited_states_sarsa = np.sum(visit_count_sarsa > 0) / visit_count_sarsa.size * 100
-    visited_states_qlearning = np.sum(visit_count_qlearning > 0) / visit_count_qlearning.size * 100
+def plot_mean_visited_states_old(visit_count1, agent1_label, visit_count2, agent2_label,):
+    visited_states1 = np.sum(visit_count1 > 0) / visit_count1.size * 100
+    visited_states2 = np.sum(visit_count2 > 0) / visit_count2.size * 100
     plt.figure(figsize=(8, 6))
-    plt.bar(["Perfect Agent", "Q-Learning"], [visited_states_sarsa, visited_states_qlearning], color=['green', 'purple'])
+    plt.bar([agent1_label, agent2_label,], [visited_states1, visited_states2], color=['green', 'purple'])
     plt.ylabel("Mean Percentage of Visited States (%)")
     plt.title("Mean Percentage of Visited States Comparison")
     plt.show()
     
-def plot_winning_percentage_over_episodes(sarsa_wins, qlearning_wins):
+def plot_winning_percentage_over_episodes(agent1_wins, agent1_label, agent2_wins, agent2_label):
     plt.figure(figsize=(12, 6))
     
     # Calculate the moving average
-    sarsa_moving_avg = moving_average(sarsa_wins, window_size=30)
-    qlearning_moving_avg = moving_average(qlearning_wins, window_size=30)
+    agent1_moving_avg = moving_average(agent1_wins, window_size=30)
+    agent2_moving_avg = moving_average(agent2_wins, window_size=30)
 
     # Plot the winning percentages
-    plt.plot(sarsa_moving_avg, label="Perfect Agent Winning Percentage (Moving Avg)", color='blue')
-    plt.plot(qlearning_moving_avg, label="Q-Learning Winning Percentage (Moving Avg)", color='orange')
+    plt.plot(agent1_moving_avg, label=f"{agent1_label} Agent Winning Percentage (Moving Avg)", color='blue')
+    plt.plot(agent2_moving_avg, label=f"{agent2_label} Winning Percentage (Moving Avg)", color='orange')
     
     plt.xlabel("Episodes")
     plt.ylabel("Winning Percentage")
