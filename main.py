@@ -260,6 +260,7 @@ if __name__ == '__main__':
     parser.add_argument('--monte', action='store_true', help='if Monte Carlo algorithm should be run')
     parser.add_argument('--qlearning', action='store_true', help='if Q-Learning algorithm should be run')
     parser.add_argument('--viz', action='store_true', help="if visualization is wanted")
+    parser.add_argument('--plot', action='store_true', help="if plotting is wanted")
     parser.add_argument('--gamma', help="the value to be used for gamma")
     parser.add_argument('--learningrate', help='the value to be used for learning rate')
     parser.add_argument('--epsilon', help='the value to be used for epsilon')
@@ -269,98 +270,77 @@ if __name__ == '__main__':
     
     #print("Running Perfect agent...")
     #perfect_metrics = run_trials(PerfectAgent, args=args)
+    agents = []
+    agent_labels = []
+    avg_rewards = []
+    avg_scores = []
+    visit_counts = []
+    win_rates = []
+    win_statuses = []
     
     if args.monte:
         monte_metrics = run_trials(MonteCarloAgent, args=args)
+        agents.append(MonteCarloAgent)
+        agent_labels.append("Monte Carlo")
+        avg_rewards.append(monte_metrics["avg_rewards"])
+        avg_scores.append(monte_metrics["avg_scores"])
+        visit_counts.append(monte_metrics["state_action_visit_count"])
+        win_rates.append(monte_metrics["avg_wins"])
+        win_statuses.append(monte_metrics["win_statuses"])
   
     if args.sarsa:
         print("Training SARSA agent...")
         sarsa_metrics = run_trials(SARSA_0, args=args)
+        agents.append(SARSA_0)
+        agent_labels.append("SARSA")
+        avg_rewards.append(sarsa_metrics["avg_rewards"])
+        avg_scores.append(sarsa_metrics["avg_scores"])
+        visit_counts.append(sarsa_metrics["state_action_visit_count"])
+        win_rates.append(sarsa_metrics["avg_wins"])
+        win_statuses.append(sarsa_metrics["win_statuses"])
     
     if args.qlearning:
         print("Training Q-Learning agent...")
         qlearning_metrics = run_trials(QLearningAgent, args=args)
-
-    if PLOT_METRICS:
-        # Plot cumulative returns
-        metrics.plot_cumulative_return(
-            avg_rewards1=monte_metrics["avg_rewards"],
-            agent1_label="Monte Carlo",
-            avg_rewards2=sarsa_metrics["avg_rewards"],
-            agent2_label="SARSA",
-            avg_rewards3=qlearning_metrics["avg_rewards"],
-            agent3_label="Q-Learning",
-            save_path=METRICS_PATH
-        )
+        qlearning_metrics = run_trials(QLearningAgent, args=args)
+        agents.append(QLearningAgent)
+        agent_labels.append("Q-Learning")
+        avg_rewards.append(qlearning_metrics["avg_rewards"])
+        avg_scores.append(qlearning_metrics["avg_scores"])
+        visit_counts.append(qlearning_metrics["state_action_visit_count"])
+        win_rates.append(qlearning_metrics["avg_wins"])
+        win_statuses.append(qlearning_metrics["win_statuses"])
         
-        # Plot scores
-        metrics.plot_agent_scores(agent_name="Monte Carlo", agent_scores=monte_metrics["avg_scores"], save_path=METRICS_PATH)
-        metrics.plot_agent_scores(agent_name="SARSA", agent_scores=sarsa_metrics["avg_scores"], save_path=METRICS_PATH)
-        metrics.plot_agent_scores(agent_name="Q-Learning", agent_scores=qlearning_metrics["avg_scores"], save_path=METRICS_PATH)
-        
-        # Plot all scores
-        metrics.plot_all_agents_scores(
-            avg_scores1=monte_metrics["avg_scores"],
-            agent1_label="Monte Carlo",
-            avg_scores2=sarsa_metrics["avg_scores"],
-            agent2_label="SARSA",
-            avg_scores3=qlearning_metrics["avg_scores"],
-            agent3_label="Q-Learning",
-            save_path=METRICS_PATH
-        )
-        
-        # Plot state visitation
-        metrics.plot_state_visitation(monte_metrics["state_visit_percentages"], "Monte Carlo", save_path=METRICS_PATH)
-        metrics.plot_state_visitation(sarsa_metrics["state_visit_percentages"], "SARSA", save_path=METRICS_PATH)
-        metrics.plot_state_visitation(qlearning_metrics["state_visit_percentages"], "Q-Learning", save_path=METRICS_PATH)
+    # Only plot if visualization is requested
+    if args.plot:
+        if args.monte:
+            metrics.plot_agent_scores(agent_name="Monte Carlo", agent_scores=monte_metrics["avg_scores"], save_path=METRICS_PATH)
+            metrics.plot_state_visitation(monte_metrics["state_visit_percentages"], "Monte Carlo", save_path=METRICS_PATH)
+            metrics.plot_visit_percentage(agent_name="Monte Carlo", visit_count=monte_metrics["state_action_visit_count"], save_path=METRICS_PATH)
+            metrics.plot_mean_visited_states_per_action(visit_count=monte_metrics["state_action_visit_count"], agent_name="Monte Carlo", save_path=METRICS_PATH)
+            metrics.plot_state_action_distribution(visit_count=monte_metrics["state_action_visit_count"], agent_name="Monte Carlo", save_path=METRICS_PATH)
+        if args.sarsa:
+            metrics.plot_agent_scores(agent_name="SARSA", agent_scores=sarsa_metrics["avg_scores"], save_path=METRICS_PATH)
+            metrics.plot_state_visitation(sarsa_metrics["state_visit_percentages"], "SARSA", save_path=METRICS_PATH)
+            metrics.plot_visit_percentage(agent_name="SARSA", visit_count=sarsa_metrics["state_action_visit_count"], save_path=METRICS_PATH)
+            metrics.plot_mean_visited_states_per_action(visit_count=sarsa_metrics["state_action_visit_count"], agent_name="SARSA", save_path=METRICS_PATH)
+            metrics.plot_state_action_distribution(visit_count=sarsa_metrics["state_action_visit_count"], agent_name="SARSA", save_path=METRICS_PATH)
+        if args.qlearning:
+            metrics.plot_agent_scores(agent_name="Q-Learning", agent_scores=qlearning_metrics["avg_scores"], save_path=METRICS_PATH)
+            metrics.plot_state_visitation(qlearning_metrics["state_visit_percentages"], "Q-Learning", save_path=METRICS_PATH)
+            metrics.plot_visit_percentage(agent_name="Q-Learning", visit_count=qlearning_metrics["state_action_visit_count"], save_path=METRICS_PATH)
+            metrics.plot_mean_visited_states_per_action(visit_count=qlearning_metrics["state_action_visit_count"], agent_name="Q-Learning", save_path=METRICS_PATH)
+            metrics.plot_state_action_distribution(visit_count=qlearning_metrics["state_action_visit_count"], agent_name="Q-Learning", save_path=METRICS_PATH)
 
-        # Plot visit percentage
-        metrics.plot_visit_percentage(agent_name="Monte Carlo", visit_count=monte_metrics["state_action_visit_count"], save_path=METRICS_PATH)
-        metrics.plot_visit_percentage(agent_name="SARSA", visit_count=sarsa_metrics["state_action_visit_count"], save_path=METRICS_PATH)
-        metrics.plot_visit_percentage(agent_name="Q-Learning", visit_count=qlearning_metrics["state_action_visit_count"], save_path=METRICS_PATH)
+        if len(agent_labels) > 1:
+            metrics.plot_winning_percentage(agent_labels, win_rates, save_path=METRICS_PATH)
+            metrics.plot_cumulative_return(avg_rewards, agent_labels, save_path=METRICS_PATH)
+            metrics.plot_mean_visited_states_percentage(visit_counts, agent_labels, save_path=METRICS_PATH)
+            metrics.plot_all_agents_scores(avg_scores, agent_labels, save_path=METRICS_PATH)
+            metrics.plot_winning_percentage_over_episodes(win_statuses, agent_labels, save_path=METRICS_PATH)
+        else:
+            print("At least two agents are required for comparison.")
 
-        # Plot winning percentage
-        metrics.plot_winning_percentage(
-            agent1_label="Monte Carlo",
-            avg_wins1=monte_metrics["avg_wins"],
-            agent2_label="SARSA",
-            avg_wins2=sarsa_metrics["avg_wins"],
-            agent3_label="Q-Learning",
-            avg_wins3=qlearning_metrics["avg_wins"],
-            save_path=METRICS_PATH
-        )
-
-        # Plot winning percentage over episodes
-        metrics.plot_winning_percentage_over_episodes(
-            agent1_wins=monte_metrics["win_statuses"],
-            agent1_label="Monte Carlo",
-            agent2_wins=sarsa_metrics["win_statuses"],
-            agent2_label="SARSA",
-            agent3_wins=qlearning_metrics["win_statuses"],
-            agent3_label="Q-Learning",
-            save_path=METRICS_PATH
-        )
-
-        # Additional metrics plots
-        metrics.plot_mean_visited_states_percentage(
-            visit_count1=monte_metrics["state_action_visit_count"],
-            agent1_label="Monte Carlo",
-            visit_count2=sarsa_metrics["state_action_visit_count"],
-            agent2_label="SARSA",
-            visit_count3=qlearning_metrics["state_action_visit_count"],
-            agent3_label="Q-Learning",
-            save_path=METRICS_PATH
-        )
-        
-        metrics.plot_mean_visited_states_per_action(visit_count=monte_metrics["state_action_visit_count"], agent_name="Monte Carlo", save_path=METRICS_PATH)
-        metrics.plot_mean_visited_states_per_action(visit_count=sarsa_metrics["state_action_visit_count"], agent_name="SARSA", save_path=METRICS_PATH)
-        metrics.plot_mean_visited_states_per_action(visit_count=qlearning_metrics["state_action_visit_count"], agent_name="Q-Learning", save_path=METRICS_PATH)
-
-        # Plot state action visits
-        metrics.plot_state_action_distribution(visit_count=monte_metrics["state_action_visit_count"], agent_name="Monte Carlo", save_path=METRICS_PATH)
-        metrics.plot_state_action_distribution(visit_count=sarsa_metrics["state_action_visit_count"], agent_name="SARSA", save_path=METRICS_PATH)
-        metrics.plot_state_action_distribution(visit_count=qlearning_metrics["state_action_visit_count"], agent_name="Q-Learning", save_path=METRICS_PATH)
-        
         #verify_get_state_index(PongEnv())
         
         # Tune hyperparameters

@@ -28,9 +28,10 @@ def plot_visit_percentage(agent_name, visit_count, save_path=None):
         plt.savefig(file_path)
     plt.show()
 
-def plot_winning_percentage(agent1_label, avg_wins1, agent2_label, avg_wins2, agent3_label, avg_wins3, save_path=None):
+def plot_winning_percentage(agent_labels: List[str], avg_wins: List[float], save_path=None):
     plt.figure(figsize=(10, 6))
-    plt.bar([agent1_label, agent2_label, agent3_label], [avg_wins1 * 100, avg_wins2 * 100, avg_wins3 * 100], color=['blue', 'orange', 'green'])
+    # Plotting each agent's winning percentage dynamically
+    plt.bar(agent_labels, [win * 100 for win in avg_wins], color=sns.color_palette("Set2", len(agent_labels)))
     plt.ylabel("Mean Winning Percentage (%)")
     plt.title("Mean Winning Percentage Comparison")
     if save_path:
@@ -38,11 +39,10 @@ def plot_winning_percentage(agent1_label, avg_wins1, agent2_label, avg_wins2, ag
         plt.savefig(file_path)
     plt.show()
 
-def plot_cumulative_return(avg_rewards1, agent1_label, avg_rewards2, agent2_label, avg_rewards3, agent3_label, save_path=None):
+def plot_cumulative_return(avg_rewards: List[np.ndarray], agent_labels: List[str], save_path=None):
     plt.figure(figsize=(10, 6))
-    plt.plot(moving_average(avg_rewards1), label=agent1_label, color='blue')
-    plt.plot(moving_average(avg_rewards2), label=agent2_label, color='orange')
-    plt.plot(moving_average(avg_rewards3), label=agent3_label, color='green')
+    for i, rewards in enumerate(avg_rewards):
+        plt.plot(moving_average(rewards), label=agent_labels[i], linewidth=2)
     plt.xlabel("Episodes")
     plt.ylabel("Mean Cumulative Return")
     plt.title("Mean Cumulative Return over Episodes")
@@ -52,12 +52,10 @@ def plot_cumulative_return(avg_rewards1, agent1_label, avg_rewards2, agent2_labe
         plt.savefig(file_path)
     plt.show()
 
-def plot_mean_visited_states_percentage(visit_count1, agent1_label, visit_count2, agent2_label, visit_count3, agent3_label, save_path=None):
-    visited_states1 = np.sum(visit_count1 > 0) / visit_count1.size * 100
-    visited_states2 = np.sum(visit_count2 > 0) / visit_count2.size * 100
-    visited_states3 = np.sum(visit_count3 > 0) / visit_count3.size * 100
+def plot_mean_visited_states_percentage(visit_counts: List[np.ndarray], agent_labels: List[str], save_path=None):
     plt.figure(figsize=(10, 6))
-    plt.bar([agent1_label, agent2_label, agent3_label], [visited_states1, visited_states2, visited_states3], color=['blue', 'orange', 'green'])
+    visited_states = [np.sum(visit_count > 0) / visit_count.size * 100 for visit_count in visit_counts]
+    plt.bar(agent_labels, visited_states, color=sns.color_palette("Set2", len(agent_labels)))
     plt.ylabel("Mean Percentage of Visited States (%)")
     plt.title("Mean Percentage of Visited States Comparison")
     if save_path:
@@ -65,20 +63,28 @@ def plot_mean_visited_states_percentage(visit_count1, agent1_label, visit_count2
         plt.savefig(file_path)
     plt.show()
 
-def plot_winning_percentage_over_episodes(agent1_wins, agent1_label, agent2_wins, agent2_label, agent3_wins, agent3_label, save_path=None):
+def plot_winning_percentage_over_episodes(win_statuses, agent_labels, save_path=None):
+    """
+    Plots the winning percentage over episodes for multiple agents based on win statuses.
+
+    :param win_statuses: List of lists where each sublist contains win statuses (1 for win, 0 for loss) for each agent.
+    :param agent_labels: List of agent labels corresponding to each list in win_statuses.
+    :param save_path: Optional path to save the plot image.
+    """
     plt.figure(figsize=(12, 6))
-    agent1_moving_avg = moving_average(agent1_wins, window_size=30)
-    agent2_moving_avg = moving_average(agent2_wins, window_size=30)
-    agent3_moving_avg = moving_average(agent3_wins, window_size=30)
-    plt.plot(agent1_moving_avg, label=f"{agent1_label} Winning Percentage (Moving Avg)", color='blue')
-    plt.plot(agent2_moving_avg, label=f"{agent2_label} Winning Percentage (Moving Avg)", color='orange')
-    plt.plot(agent3_moving_avg, label=f"{agent3_label} Winning Percentage (Moving Avg)", color='green')
+
+    # Plot each agent's winning percentage moving average
+    for i, wins in enumerate(win_statuses):
+        moving_avg = moving_average(wins, window_size=30)
+        plt.plot(moving_avg, label=f"{agent_labels[i]} Winning Percentage (Moving Avg)", color=f"C{i}")
+
     plt.xlabel("Episodes")
     plt.ylabel("Winning Percentage")
     plt.title("Winning Percentage Over Episodes")
     plt.legend()
     plt.ylim(0, 1.1)
     plt.grid()
+
     if save_path:
         file_path = os.path.join(save_path, "winning_percentage_over_episodes.png")
         plt.savefig(file_path)
@@ -153,33 +159,17 @@ def plot_agent_scores(agent_scores: np.ndarray, agent_name: str, save_path:str =
         plt.savefig(file_path)
     plt.show()
 
-def plot_all_agents_scores(avg_scores1, agent1_label, avg_scores2, agent2_label, avg_scores3, agent3_label, save_path=None):
-    """
-    Plots the scores of all three agents and saves the plot to the given path.
-
-    :param avg_rewards1: Array of scores for Agent 1
-    :param agent1_label: Label for Agent 1
-    :param avg_rewards2: Array of scores for Agent 2
-    :param agent2_label: Label for Agent 2
-    :param avg_rewards3: Array of scores for Agent 3
-    :param agent3_label: Label for Agent 3
-    :param save_path: Path to save the plot (if provided)
-    """
-    # Create a figure and axis for plotting
+    
+def plot_all_agents_scores(agent_scores: List[np.ndarray], agent_labels: List[str], save_path=None):
     plt.figure(figsize=(10, 6))
-    
-    # Plot scores for all agents
-    plt.plot(avg_scores1, label=agent1_label, color='blue', linestyle='-', linewidth=2)
-    plt.plot(avg_scores2, label=agent2_label, color='orange', linestyle='-', linewidth=2)
-    plt.plot(avg_scores3, label=agent3_label, color='green', linestyle='-', linewidth=2)
-    
-    # Add labels, title, and legend
-    plt.xlabel('Episodes')
-    plt.ylabel('Average Score')
-    plt.title('Agent Performance Comparison')
+    for i, scores in enumerate(agent_scores):
+        plt.plot(scores, label=agent_labels[i])
+    plt.title("Agent Performance Comparison")
+    plt.xlabel("Episodes")
+    plt.ylabel("Average Score")
     plt.legend(loc='best')
-
     if save_path:
         file_path = os.path.join(save_path, "all_scores.png")
         plt.savefig(file_path)
     plt.show()
+    
