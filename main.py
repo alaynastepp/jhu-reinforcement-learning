@@ -22,7 +22,7 @@ AGENT_COUNT = 10
 EPISODE_COUNT = 1000
 WINDOW_LENGTH = 30
 EXP_STARTS = False
-DEBUG = True
+DEBUG = False
 PLOT_METRICS = False
 METRICS_PATH = os.path.join(HERE, 'experiment1')
 
@@ -74,7 +74,7 @@ def generate_episode(episode: int, env: PongEnv, agent, visualizer=None) -> Tupl
             visualizer.render((ball_x, ball_y), paddle_y)
         current_state = new_state
         
-    if agent is MonteCarlo or agent is MonteCarloAgent:
+    if type(agent) is MonteCarlo or type(agent) is MonteCarloAgent:
         agent.update_q()
         agent.clear_trajectory()
   

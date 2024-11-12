@@ -63,7 +63,7 @@ class MonteCarloAgent:
         return action
 
     def update_q(self):
-        #get final state info
+        # get final state info
         f_stte = self.episode[self.turn-1][0]
         f_actn = self.episode[self.turn-1][1]
         f_rwd = self.episode[self.turn-1][2]
@@ -72,11 +72,11 @@ class MonteCarloAgent:
         n = self.n[f_stte][f_actn]
         self.q_table[f_stte][f_actn] += (1/n)*(G- self.q_table[f_stte][f_actn])
         
-        #update visited states
+        # update visited states
         if (f_stte in self.visited_states) == False:
             self.visited_states.append(f_stte)
         
-        #update G, backtracking from second to last state
+        # update G, backtracking from second to last state
         for i in range(self.turn-2,-1,-1):
             stte = self.episode[i][0]
             actn = self.episode[i][1]
