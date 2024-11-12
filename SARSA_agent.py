@@ -17,6 +17,9 @@ class SARSA:
 		self.trajectory = [[0, 0, 0]]	# will be reward, state, action
 		self.cur_state = None
 		self.prev_action = None
+	
+	def get_number_of_states(self):
+		return self.number_of_states
 
 	def get_reached_state_action_pairs(self):
 		table = np.zeros((self.number_of_states, self.number_of_actions))

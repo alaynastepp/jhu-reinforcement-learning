@@ -15,6 +15,9 @@ class QLearning:
 		self.q_table = np.zeros((self.number_of_states, self.number_of_actions))
 
 		self.trajectory = [[0, 0, 0]]	# will be reward, state, action
+	
+	def get_number_of_states(self):
+		return self.number_of_states
 
 	def get_reached_state_action_pairs(self):
 		table = np.zeros((self.number_of_states, self.number_of_actions))
