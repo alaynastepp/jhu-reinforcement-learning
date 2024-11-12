@@ -12,9 +12,9 @@ from MonteCarlo_alayna import MonteCarloAgent
 import metrics
 from basicPongEnv import PongEnv
 from pongVisualizer import PongVisualizer
-from MonteCarlo_Agent import MonteCarlo
-from SARSA_Agent import SARSA
-from QLearning_Agent import QLearning
+from MonteCarlo_kate import MonteCarlo
+from SARSA_kate import SARSA
+from QLearning_kate import QLearning
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -74,7 +74,7 @@ def generate_episode(episode: int, env: PongEnv, agent, visualizer=None) -> Tupl
             visualizer.render((ball_x, ball_y), paddle_y)
         current_state = new_state
         
-    if agent is MonteCarlo:
+    if agent is MonteCarlo or agent is MonteCarloAgent:
         agent.update_q()
         agent.clear_trajectory()
   
