@@ -122,7 +122,7 @@ class PongEnv:
         if self.ball_x == self.grid_size - 1:
             if self.paddle_y == self.ball_y:
                 self.score += 1
-                reward = +1
+                reward = +5
                 self.ball_dx *= -1  # reverse direction
                 
                 # Handle ball angle change based on paddle movement and ball direction
@@ -152,7 +152,7 @@ class PongEnv:
             else:
                 # paddle missed the ball
                 self.done = True
-                reward = -1
+                reward = -25
         else:
             reward = 0  # no point scored, continue game
 

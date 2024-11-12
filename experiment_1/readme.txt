@@ -1,2 +1,0 @@
-This experiment ran a 1000 episodes for a single agent count. SARSA, QLearning, and Monte Carlo were run individually. Everything was defaulted and the max_steps was changed to 10000.
-The metrics gathered was how many successful "hits" the agent got in a single episode.
