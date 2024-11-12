@@ -23,7 +23,7 @@ EPISODE_COUNT = 1000
 WINDOW_LENGTH = 30
 EXP_STARTS = False
 DEBUG = False
-PLOT_METRICS = False
+PLOT_METRICS = True
 METRICS_PATH = os.path.join(HERE, 'experiment1')
 
 def log(val):
@@ -81,7 +81,7 @@ def generate_episode(episode: int, env: PongEnv, agent, visualizer=None) -> Tupl
     # return the result of the game
     return rewards, episode_visit_count, current_state, win, env.get_score()
 
-def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent, MonteCarlo]], args) -> Dict[str, Union[float, np.ndarray, List[float]]]:
+def run_trials(agent_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], args) -> Dict[str, Union[float, np.ndarray, List[float]]]:
     """
 	Based on the agent type passed in, run many agents for a certain amount of episodes and gather metrics on their performance
 
@@ -92,6 +92,7 @@ def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent, Mo
     :return Dict containing the following metrics:
             'avg_rewards': np.ndarray - Average rewards over all agents.
             'avg_wins': float - Overall win rate.
+            'avg_scores': np.ndarray - Average scores over all agents.
             'state_action_visit_count': np.ndarray - Visit counts for each state-action pair.
             'win_statuses': np.ndarray - Array of win status for each episode.
             'state_visit_percentages': List[float] - State visit percentages across episodes.
@@ -107,6 +108,7 @@ def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent, Mo
     print(f"Running trials for {agent_class} with non-default args {params}")
 
     all_rewards = []
+    all_scores = []
     all_wins = []
     total_wins = 0
     visit_count = np.zeros((environment.get_number_of_states(), environment.get_number_of_actions())) #raw count of how many times a specific state-action pair has been visited across episodes
@@ -121,6 +123,7 @@ def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent, Mo
                 agent = agent_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
             # initialize arrays for keeping track of agent performance over time
             episode_rewards = []
+            episode_scores = []
             win_status = []
             V_t = np.zeros((EPISODE_COUNT,1))  # percent states visited per episode
             wins = 0
@@ -128,14 +131,15 @@ def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent, Mo
                 # play game
                 rewards, episode_visit_count, final_state, win, score = generate_episode(i, environment, agent, visualizer=visualizer)
                 episode_rewards.append(sum(rewards))
+                episode_scores.append(score)
                 win_status.append(1 if win else 0)
                 wins += win
                 if agent_class != PerfectAgent:
                     v_t = agent.get_visited_states_num()
                     V_t[i,0] = (v_t/agent.get_number_of_states())*100
-                #agent.clear_trajectory() 
             
             all_rewards.append(episode_rewards)
+            all_scores.append(episode_scores)
             total_wins += wins
             all_wins.append(win_status)
             visit_count += episode_visit_count
@@ -147,9 +151,6 @@ def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent, Mo
             if visualizer is not None:
                 visualizer.close()
         
-    avg_rewards = np.mean(all_rewards, axis=0)
-    avg_wins = total_wins / (AGENT_COUNT * EPISODE_COUNT)  # Calculate win rate
-    
     # Calculate average rewards over the last 30 episodes
     avg_rewards_last_30 = np.mean([np.convolve(rewards, np.ones(30) / 30, mode='valid') for rewards in all_rewards], axis=0)
 
@@ -169,14 +170,15 @@ def run_trials(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent, Mo
     
     #return avg_rewards, avg_wins, visit_count, np.mean(all_wins, axis=0), all_V_t
     return {
-        'avg_rewards': avg_rewards,
-        'avg_wins': avg_wins,
+        'avg_rewards': np.mean(all_rewards, axis=0),
+        'avg_wins': total_wins / (AGENT_COUNT * EPISODE_COUNT),  # Calculate win rate,
+        'avg_scores': np.mean(all_scores, axis=0),
         'state_action_visit_count': visit_count,
         'win_statuses': np.mean(all_wins, axis=0),
         'state_visit_percentages': all_V_t
     }
 
-def run_trials_with_hyperparams(agent_class: Type[Union[QLearningAgent, SARSA_0, PerfectAgent]], alpha_values: List[float], gamma_values: List[float], epsilon_values: List[float]) -> None:
+def run_trials_with_hyperparams(agent_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], alpha_values: List[float], gamma_values: List[float], epsilon_values: List[float]) -> None:
     """
     Runs multiple trials with different hyperparameter values and identifies the best configuration.
 
@@ -291,6 +293,22 @@ if __name__ == '__main__':
             save_path=METRICS_PATH
         )
         
+        # Plot scores
+        metrics.plot_agent_scores(agent_name="Monte Carlo", agent_scores=monte_metrics["avg_scores"], save_path=METRICS_PATH)
+        metrics.plot_agent_scores(agent_name="SARSA", agent_scores=sarsa_metrics["avg_scores"], save_path=METRICS_PATH)
+        metrics.plot_agent_scores(agent_name="Q-Learning", agent_scores=qlearning_metrics["avg_scores"], save_path=METRICS_PATH)
+        
+        # Plot all scores
+        metrics.plot_all_agents_scores(
+            avg_scores1=monte_metrics["avg_scores"],
+            agent1_label="Monte Carlo",
+            avg_scores2=sarsa_metrics["avg_scores"],
+            agent2_label="SARSA",
+            avg_scores3=qlearning_metrics["avg_scores"],
+            agent3_label="Q-Learning",
+            save_path=METRICS_PATH
+        )
+        
         # Plot state visitation
         metrics.plot_state_visitation(monte_metrics["state_visit_percentages"], "Monte Carlo", save_path=METRICS_PATH)
         metrics.plot_state_visitation(sarsa_metrics["state_visit_percentages"], "SARSA", save_path=METRICS_PATH)
@@ -338,6 +356,7 @@ if __name__ == '__main__':
         metrics.plot_mean_visited_states_per_action(visit_count=sarsa_metrics["state_action_visit_count"], agent_name="SARSA", save_path=METRICS_PATH)
         metrics.plot_mean_visited_states_per_action(visit_count=qlearning_metrics["state_action_visit_count"], agent_name="Q-Learning", save_path=METRICS_PATH)
 
+        # Plot state action visits
         metrics.plot_state_action_distribution(visit_count=monte_metrics["state_action_visit_count"], agent_name="Monte Carlo", save_path=METRICS_PATH)
         metrics.plot_state_action_distribution(visit_count=sarsa_metrics["state_action_visit_count"], agent_name="SARSA", save_path=METRICS_PATH)
         metrics.plot_state_action_distribution(visit_count=qlearning_metrics["state_action_visit_count"], agent_name="Q-Learning", save_path=METRICS_PATH)

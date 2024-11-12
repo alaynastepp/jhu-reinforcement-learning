@@ -13,13 +13,18 @@ class SARSA:
 		self.number_of_actions = num_actions
 
 		self.q_table = np.zeros((self.number_of_states, self.number_of_actions))
-
+		self.state_actn_pairs = {}
+  
 		self.trajectory = [[0, 0, 0]]	# will be reward, state, action
 		self.cur_state = None
 		self.prev_action = None
 	
 	def get_number_of_states(self):
 		return self.number_of_states
+
+	def get_visited_states_num(self):
+		sum_visits = sum(list(self.state_actn_pairs.values())) 
+		return sum_visits
 
 	def get_reached_state_action_pairs(self):
 		table = np.zeros((self.number_of_states, self.number_of_actions))
@@ -51,7 +56,8 @@ class SARSA:
 
 		# record action in trajectory array
 		self.trajectory[-1][2] = (self.prev_action)
-
+		if not((state,self.prev_action) in self.state_actn_pairs):
+			self.state_actn_pairs[(state,self.prev_action)] = 1
 		return self.prev_action
 
 	def update(self, new_state, reward):
@@ -76,3 +82,4 @@ class SARSA:
 		self.trajectory = [[0, 0, 0]]
 		self.cur_state = None
 		self.prev_action = None
+		self.state_actn_pairs1 = {}

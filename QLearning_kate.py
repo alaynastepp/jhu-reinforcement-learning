@@ -15,9 +15,14 @@ class QLearning:
 		self.q_table = np.zeros((self.number_of_states, self.number_of_actions))
 
 		self.trajectory = [[0, 0, 0]]	# will be reward, state, action
-	
+		self.state_actn_pairs = {}
+  
 	def get_number_of_states(self):
 		return self.number_of_states
+
+	def get_visited_states_num(self) -> int:
+		sum_visits = sum(list(self.state_actn_pairs.values()))
+		return sum_visits
 
 	def get_reached_state_action_pairs(self):
 		table = np.zeros((self.number_of_states, self.number_of_actions))
@@ -48,6 +53,8 @@ class QLearning:
 
 		# record action in trajectory array
 		self.trajectory[-1][2] = (action)
+		if not((state,action) in self.state_actn_pairs):
+					self.state_actn_pairs[(state,action)] = 1
 
 		return action
 
@@ -64,3 +71,4 @@ class QLearning:
 	
 	def clear_trajectory(self):
 		self.trajectory = [[0, 0, 0]]
+		self.state_actn_pairs1 = {}

@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import os
+from typing import List, Tuple, Dict, Type, Union
 
 def pretty_print_metrics(avg_rewards, avg_wins, percentage_visited_0_to_450, percentage_visited_450_to_900):
     print("\nExperiment Metrics:")
@@ -130,5 +131,55 @@ def plot_state_visitation(all_V_t, agent_class_name, save_path=None):
     plt.tight_layout()
     if save_path:
         file_path = os.path.join(save_path, f"{agent_class_name.lower()}_state_visualization.png")
+        plt.savefig(file_path)
+    plt.show()
+
+def plot_agent_scores(agent_scores: np.ndarray, agent_name: str, save_path:str = None):
+    """
+    Plot the average scores for a given agent.
+
+    :param agent_scores: np.ndarray - Array of scores for the agent across episodes.
+    :param label: str - Label for the agent, used for plot title and legend.
+    """
+    plt.figure(figsize=(10, 6))
+    plt.plot(agent_scores, label=agent_name)
+    plt.title(f"{agent_name} Scores over Episodes")
+    plt.xlabel("Episodes")
+    plt.ylabel("Score")
+    plt.legend()
+    plt.grid(True)
+    if save_path:
+        file_path = os.path.join(save_path, f"{agent_name.lower()}_scores.png")
+        plt.savefig(file_path)
+    plt.show()
+
+def plot_all_agents_scores(avg_scores1, agent1_label, avg_scores2, agent2_label, avg_scores3, agent3_label, save_path=None):
+    """
+    Plots the scores of all three agents and saves the plot to the given path.
+
+    :param avg_rewards1: Array of scores for Agent 1
+    :param agent1_label: Label for Agent 1
+    :param avg_rewards2: Array of scores for Agent 2
+    :param agent2_label: Label for Agent 2
+    :param avg_rewards3: Array of scores for Agent 3
+    :param agent3_label: Label for Agent 3
+    :param save_path: Path to save the plot (if provided)
+    """
+    # Create a figure and axis for plotting
+    plt.figure(figsize=(10, 6))
+    
+    # Plot scores for all agents
+    plt.plot(avg_scores1, label=agent1_label, color='blue', linestyle='-', linewidth=2)
+    plt.plot(avg_scores2, label=agent2_label, color='orange', linestyle='-', linewidth=2)
+    plt.plot(avg_scores3, label=agent3_label, color='green', linestyle='-', linewidth=2)
+    
+    # Add labels, title, and legend
+    plt.xlabel('Episodes')
+    plt.ylabel('Average Score')
+    plt.title('Agent Performance Comparison')
+    plt.legend(loc='best')
+
+    if save_path:
+        file_path = os.path.join(save_path, "all_scores.png")
         plt.savefig(file_path)
     plt.show()

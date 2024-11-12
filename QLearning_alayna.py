@@ -104,7 +104,7 @@ class QLearningAgent:
         Resets the Q-table and other agent-specific parameters for a new episode.
         """
         self.q_table = np.zeros((self.number_of_states, self.number_of_actions), dtype="float64")
-        self.state_actn_pairs1 = {}
+        self.state_actn_pairs = {}
         self.state = 0
         self.next_state = 0
         self.reward = 0
