@@ -4,6 +4,7 @@ import seaborn as sns
 import os
 from typing import List, Tuple, Dict, Type, Union
 import argparse
+import pickle 
 
 from QLearning_alayna import QLearningAgent
 from SARSA_alayna import SARSA_0
@@ -119,13 +120,17 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     visit_count_right = np.zeros((environment.get_number_of_states(), environment.get_number_of_actions())) #raw count of how many times a specific state-action pair has been visited across episodes
     all_V_t_right = []
 
-    for i in range(AGENT_COUNT):
+    for a in range(AGENT_COUNT):
         # Alternate ball_dx direction for each environment instance
-        initial_ball_dx = 1 if i % 2 == 0 else -1
+        initial_ball_dx = 1 if a % 2 == 0 else -1
         initial_ball_dy = np.random.choice([-1, 1])
         environment = PongEnv(grid_size=10, ball_dx=initial_ball_dx, ball_dy=initial_ball_dy)
         agent_left = agent_left_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
         agent_right = agent_right_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
+        # TODO - pass in path to pretrained agent
+        pretrained_agent_left = load_agent(agent_left_class, '/Users/steppan1/Desktop/Reinforcement Learning/jhu-reinforcement-learning/trained_agents/trained_QLearningAgent_4.pkl', environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
+        pretrained_agent_right = load_agent(agent_right_class, '/Users/steppan1/Desktop/Reinforcement Learning/jhu-reinforcement-learning/trained_agents/trained_QLearningAgent_4.pkl', environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
+        
         episode_rewards_left = []
         episode_scores_left = []
         win_status_left = []
@@ -136,11 +141,11 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
         win_status_right = []
         V_t_right = np.zeros((EPISODE_COUNT,1))  # percent states visited per episode
         wins_right = 0
-        for episode in range(EPISODE_COUNT):
-            log(f"Starting episode {episode + 1}")
+        for i in range(EPISODE_COUNT):
+            log(f"Starting episode {i + 1}")
             
             rewards_left, rewards_right, episode_visit_count_left, episode_visit_count_right, final_state, win_left, win_right, score = generate_episode(
-                episode, environment, agent_left, agent_right, visualizer
+                i, environment, agent_left, agent_right, visualizer
             )
           
             score_left, score_right = score
@@ -160,7 +165,7 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
             V_t_right[i,0] = (v_t_right/agent_right.get_number_of_states())*100
 
             # Optionally, log more detailed information about the episode, such as win/loss
-            log(f"Episode {episode + 1} finished. Left Agent Reward: {np.sum(rewards_left)}, Right Agent Reward: {np.sum(rewards_right)}")
+            log(f"Episode {i + 1} finished. Left Agent Reward: {np.sum(rewards_left)}, Right Agent Reward: {np.sum(rewards_right)}")
             log(f"Final score: {score}, Win Left: {win_left}, Win Right: {win_right}")
 
         all_rewards_left.append(episode_rewards_left)
@@ -263,6 +268,19 @@ def run_trials_with_hyperparams(agent_left_class, agent_right_class, alpha_value
         print(f"* Avg Reward: {best_avg_reward:.2f}")
         print("*" * 50 + "\n")
 
+def save_agent(agent, filename):
+    with open(filename, 'wb') as f:
+        pickle.dump(agent.q_table, f)
+    print(f"Agent saved to {filename}")
+
+def load_agent(agent_class, filename, *args, **kwargs):
+    # Initialize a new agent
+    agent = agent_class(*args, **kwargs)
+    # Load the saved Q-table
+    with open(filename, 'rb') as f:
+        agent.q_table = pickle.load(f)
+    print(f"Agent loaded from {filename}")
+    return agent
 
 if __name__ == '__main__':
     
@@ -308,6 +326,7 @@ if __name__ == '__main__':
     win_statuses = []
     
     results = run_trials(agent_left, agent_right, args)
+    
     agents.append(agent_left)
     agent_labels.append(str(agent_left.__name__))
     avg_rewards.append(results["avg_rewards_left"])

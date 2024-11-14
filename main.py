@@ -4,6 +4,7 @@ import seaborn as sns
 import os
 from typing import List, Tuple, Dict, Type, Union
 import argparse
+import pickle
 
 from QLearning_alayna import QLearningAgent
 from SARSA_alayna import SARSA_0
@@ -22,14 +23,18 @@ AGENT_COUNT = 10
 EPISODE_COUNT = 1000
 WINDOW_LENGTH = 30
 EXP_STARTS = False
-DEBUG = True
+DEBUG = False
 METRICS_PATH = os.path.join(HERE, 'experiment1')
+TRAINED_AGENTS_PATH = os.path.join(HERE, 'trained_agents')
 
 def log(val):
 	if DEBUG:
 		print(val)
 
 if METRICS_PATH and not os.path.exists(METRICS_PATH):
+        os.makedirs(METRICS_PATH)
+        
+if TRAINED_AGENTS_PATH and not os.path.exists(TRAINED_AGENTS_PATH):
         os.makedirs(METRICS_PATH)
         
 def generate_episode(episode: int, env: PongEnv, agent: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], visualizer=None) -> Tuple[List[float], np.ndarray, Tuple, bool]:
@@ -113,42 +118,40 @@ def run_trials(agent_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA
     visit_count = np.zeros((environment.get_number_of_states(), environment.get_number_of_actions())) #raw count of how many times a specific state-action pair has been visited across episodes
     all_V_t = [] #percentage of the total states that have been visited 
     
-    reward_file_name = f"{agent_class.__name__}_episode_rewards.txt"
-    with open(reward_file_name, "w") as reward_file:
-        for i in range(AGENT_COUNT):
-            if agent_class == PerfectAgent:
-                agent = agent_class(environment) 
-            else:
-                agent = agent_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
-            # initialize arrays for keeping track of agent performance over time
-            episode_rewards = []
-            episode_scores = []
-            win_status = []
-            V_t = np.zeros((EPISODE_COUNT,1))  # percent states visited per episode
-            wins = 0
-            for i in range(EPISODE_COUNT): 
-                # play game
-                rewards, episode_visit_count, final_state, win, score = generate_episode(i, environment, agent, visualizer=visualizer)
-                episode_rewards.append(sum(rewards))
-                episode_scores.append(score)
-                win_status.append(1 if win else 0)
-                wins += win
-                visit_count += episode_visit_count
-                if agent_class != PerfectAgent:
-                    v_t = agent.get_visited_states_num()
-                    V_t[i,0] = (v_t/agent.get_number_of_states())*100
+    for a in range(AGENT_COUNT):
+        if agent_class == PerfectAgent:
+            agent = agent_class(environment) 
+        else:
+            agent = agent_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
+        # initialize arrays for keeping track of agent performance over time
+        episode_rewards = []
+        episode_scores = []
+        win_status = []
+        V_t = np.zeros((EPISODE_COUNT,1))  # percent states visited per episode
+        wins = 0
+        for i in range(EPISODE_COUNT): 
+            # play game
+            rewards, episode_visit_count, final_state, win, score = generate_episode(i, environment, agent, visualizer=visualizer)
+            episode_rewards.append(sum(rewards))
+            episode_scores.append(score)
+            win_status.append(1 if win else 0)
+            wins += win
+            visit_count += episode_visit_count
+            if agent_class != PerfectAgent:
+                v_t = agent.get_visited_states_num()
+                V_t[i,0] = (v_t/agent.get_number_of_states())*100
+        
+        all_rewards.append(episode_rewards)
+        all_scores.append(episode_scores)
+        total_wins += wins
+        all_wins.append(win_status)
+        all_V_t.append(V_t.flatten())
             
-            all_rewards.append(episode_rewards)
-            all_scores.append(episode_scores)
-            total_wins += wins
-            all_wins.append(win_status)
-            all_V_t.append(V_t.flatten())
-            
-            for reward in episode_rewards:
-                reward_file.write(f"{reward}\n")
-                
-            if visualizer is not None:
-                visualizer.close()
+        if visualizer is not None:
+            visualizer.close()
+        
+        # save off trained agent
+        save_agent(agent, os.path.join(TRAINED_AGENTS_PATH, f'trained_{str(agent_class.__name__)}_{a}.pkl'))
         
     # Calculate average rewards over the last 30 episodes
     avg_rewards_last_30 = np.mean([np.convolve(rewards, np.ones(30) / 30, mode='valid') for rewards in all_rewards], axis=0)
@@ -212,7 +215,21 @@ def run_trials_with_hyperparams(agent_class: Type[Union[QLearningAgent, QLearnin
         print(f"* Epsilon:  {best_params[2]:.4f}")
         print(f"* Avg Reward: {best_avg_reward:.2f}")
         print("*" * 50 + "\n")
-        
+
+def save_agent(agent, path):
+    with open(path, 'wb') as f:
+        pickle.dump(agent.q_table, f)
+    print(f"Agent saved to {path}")
+
+def load_agent(agent_class, filename, *args, **kwargs):
+    # Initialize a new agent
+    agent = agent_class(*args, **kwargs)
+    # Load the saved Q-table
+    with open(filename, 'rb') as f:
+        agent.q_table = pickle.load(f)
+    print(f"Agent loaded from {filename}")
+    return agent
+
 #TODO - remove! this just checks that all state index values are unique
 def verify_get_state_index(env):
     unique_indices = set()
