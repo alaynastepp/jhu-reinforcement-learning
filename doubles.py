@@ -23,8 +23,9 @@ AGENT_COUNT = 10
 EPISODE_COUNT = 1000
 WINDOW_LENGTH = 30
 EXP_STARTS = False
-DEBUG = True
+DEBUG = False
 METRICS_PATH = os.path.join(HERE, 'doubles-experiment1')
+TRAINED_AGENTS_PATH = os.path.join(HERE, 'trained_agents')
 
 def log(val):
 	if DEBUG:
@@ -125,11 +126,12 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
         initial_ball_dx = 1 if a % 2 == 0 else -1
         initial_ball_dy = np.random.choice([-1, 1])
         environment = PongEnv(grid_size=10, ball_dx=initial_ball_dx, ball_dy=initial_ball_dy)
-        agent_left = agent_left_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
-        agent_right = agent_right_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
-        # TODO - pass in path to pretrained agent
-        pretrained_agent_left = load_agent(agent_left_class, '/Users/steppan1/Desktop/Reinforcement Learning/jhu-reinforcement-learning/trained_agents/trained_QLearningAgent_4.pkl', environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
-        pretrained_agent_right = load_agent(agent_right_class, '/Users/steppan1/Desktop/Reinforcement Learning/jhu-reinforcement-learning/trained_agents/trained_QLearningAgent_4.pkl', environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
+        if args.pretrained:
+            agent_left = load_agent(agent_left_class, os.path.join(TRAINED_AGENTS_PATH, f'trained_{str(agent_left_class.__name__)}_{a}.pkl'), environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
+            agent_right = load_agent(agent_right_class, os.path.join(TRAINED_AGENTS_PATH, f'trained_{str(agent_right_class.__name__)}_{a}.pkl'), environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
+        else:
+            agent_left = agent_left_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
+            agent_right = agent_right_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
         
         episode_rewards_left = []
         episode_scores_left = []
@@ -287,9 +289,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--agent_left', type=str, required=True, help="The type of the left agent (e.g., 'AgentType1')")
     parser.add_argument('--agent_right', type=str, required=True, help="The type of the right agent (e.g., 'AgentType2')")
-    parser.add_argument('--sarsa', action='store_true', help='if SARSA algorithm should be run')
-    parser.add_argument('--monte', action='store_true', help='if Monte Carlo algorithm should be run')
-    parser.add_argument('--qlearning', action='store_true', help='if Q-Learning algorithm should be run')
+    parser.add_argument('--pretrained', action='store_true', help='if we want to load a pre-trained agent')
     parser.add_argument('--viz', action='store_true', help="if visualization is wanted")
     parser.add_argument('--plot', action='store_true', help="if plotting is wanted")
     parser.add_argument('--gamma', help="the value to be used for gamma")

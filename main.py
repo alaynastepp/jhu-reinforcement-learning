@@ -280,7 +280,7 @@ if __name__ == '__main__':
     parser.add_argument('--gamma', help="the value to be used for gamma")
     parser.add_argument('--learningrate', help='the value to be used for learning rate')
     parser.add_argument('--epsilon', help='the value to be used for epsilon')
-    parser.add_argument('--debug', help='if debug mode is turned on')
+    parser.add_argument('--debug', action='store_true', help='if debug mode is turned on')
     
     args = parser.parse_args()
     
