@@ -22,8 +22,7 @@ AGENT_COUNT = 10
 EPISODE_COUNT = 1000
 WINDOW_LENGTH = 30
 EXP_STARTS = False
-DEBUG = False
-PLOT_METRICS = True
+DEBUG = True
 METRICS_PATH = os.path.join(HERE, 'doubles-experiment1')
 
 def log(val):
@@ -106,11 +105,6 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     params = {"gamma": args.gamma, "learning_rate": args.learningrate, "epsilon": args.epsilon}
     params = {k:float(v) for k,v in params.items() if v is not None}
     print(f"Running trials for {agent_left_class.__name__} vs {agent_right_class.__name__} with non-default args {params}")
-    
-    total_rewards_left = []
-    total_rewards_right = []
-    total_visits_left = np.zeros((environment.get_number_of_states(), environment.get_number_of_actions()))
-    total_visits_right = np.zeros((environment.get_number_of_states(), environment.get_number_of_actions()))
 
     all_rewards_left = []
     all_scores_left = []
@@ -126,6 +120,10 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     all_V_t_right = []
 
     for i in range(AGENT_COUNT):
+        # Alternate ball_dx direction for each environment instance
+        initial_ball_dx = 1 if i % 2 == 0 else -1
+        initial_ball_dy = np.random.choice([-1, 1])
+        environment = PongEnv(grid_size=10, ball_dx=initial_ball_dx, ball_dy=initial_ball_dy)
         agent_left = agent_left_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
         agent_right = agent_right_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
         episode_rewards_left = []
@@ -161,13 +159,6 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
             V_t_left[i,0] = (v_t_left/agent_left.get_number_of_states())*100
             V_t_right[i,0] = (v_t_right/agent_right.get_number_of_states())*100
 
-            # Accumulate rewards and visit counts for each agent
-            total_rewards_left.append(np.sum(rewards_left))
-            total_rewards_right.append(np.sum(rewards_right))  # Assume symmetrical reward system for both agents
-
-            total_visits_left += episode_visit_count_left
-            total_visits_right += episode_visit_count_right
-
             # Optionally, log more detailed information about the episode, such as win/loss
             log(f"Episode {episode + 1} finished. Left Agent Reward: {np.sum(rewards_left)}, Right Agent Reward: {np.sum(rewards_right)}")
             log(f"Final score: {score}, Win Left: {win_left}, Win Right: {win_right}")
@@ -182,12 +173,6 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
         all_wins_right.append(win_status_right)
         all_V_t_left.append(V_t_left.flatten())
         all_V_t_right.append(V_t_right.flatten())
-    # After all episodes, you could aggregate results, update agents' models, or output stats
-    avg_reward_left = np.mean(total_rewards_left)
-    avg_reward_right = np.mean(total_rewards_right)
-
-    log(f"Average reward for Left Agent: {avg_reward_left}")
-    log(f"Average reward for Right Agent: {avg_reward_right}")
     
     # Calculate average rewards over the last 30 episodes
     avg_rewards_last_30_left = np.mean([np.convolve(rewards, np.ones(30) / 30, mode='valid') for rewards in all_rewards_left], axis=0)

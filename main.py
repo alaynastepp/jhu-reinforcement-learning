@@ -22,8 +22,7 @@ AGENT_COUNT = 10
 EPISODE_COUNT = 1000
 WINDOW_LENGTH = 30
 EXP_STARTS = False
-DEBUG = False
-PLOT_METRICS = True
+DEBUG = True
 METRICS_PATH = os.path.join(HERE, 'experiment1')
 
 def log(val):

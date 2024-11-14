@@ -1,7 +1,7 @@
 import numpy as np
 
 class PongEnv:
-    def __init__(self, grid_size=10, ball_dx=1, ball_dy=1, ball_x=None, ball_y=None, max_steps=100):
+    def __init__(self, grid_size=10, ball_dx=1, ball_dy=1, ball_x=None, ball_y=None, max_steps=10000):
         self.grid_size = grid_size
         self.initial_ball_dx = ball_dx
         self.initial_ball_dy = ball_dy

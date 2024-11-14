@@ -1,7 +1,7 @@
 import numpy as np
 
 class PongEnv:
-    def __init__(self, grid_size=10, ball_dx=1, ball_dy=1, ball_x=None, ball_y=None, max_steps=100):
+    def __init__(self, grid_size=10, ball_dx=1, ball_dy=1, ball_x=None, ball_y=None, max_steps=10000):
         self.grid_size = grid_size
         self.initial_ball_dx = ball_dx
         self.initial_ball_dy = ball_dy
@@ -107,26 +107,78 @@ class PongEnv:
         if self.ball_x == 0:
             if self.paddle_y_left == self.ball_y:
                 self.score_left += 1
-                reward_left += 5
+                reward_left = +5
                 self.ball_dx *= -1
+                # Handle ball angle change based on paddle movement and ball direction
+                if self.ball_dy < 0:  # Ball coming down
+                    if action_left == 1:  # Paddle moving up
+                        self.ball_dy = 0  # Normal bounce: send ball back in opposite angle
+                    elif action_left == 2:  # Paddle moving down
+                        self.ball_dy = -1  # Send ball back up at same 45-degree angle
+                    elif action_left == 0:  # Paddle stationary
+                        self.ball_dy = -1  # Send ball back up at same 45-degree angle
+
+                elif self.ball_dy > 0:  # Ball coming up
+                    if action_left == 1:  # Paddle moving up
+                        self.ball_dy = 1  # Send ball back down at same 45-degree angle
+                    elif action_left == 2:  # Paddle moving down
+                        self.ball_dy = 0  # Send ball back in a straight vertical line
+                    elif action_left == 0:  # Paddle stationary
+                        self.ball_dy = 1  # Send ball back down at same 45-degree angle
+
+                elif self.ball_dy == 0:  # Ball coming straight
+                    if action_left == 1:  # Paddle moving up
+                        self.ball_dy = -1  # Send ball back at a 45-degree angle up
+                    elif action_left == 2:  # Paddle moving down
+                        self.ball_dy = 1  # Send ball back at a 45-degree angle down
+                    elif action_left == 0:  # Paddle stationary
+                        self.ball_dy = 0  # Send ball back in a straight vertical line
             else:
-                reward_right += 25
+                reward_left = -25
                 self.done = True
 
         # Ball bounces off right paddle
         elif self.ball_x == self.grid_size - 1:
             if self.paddle_y_right == self.ball_y:
                 self.score_right += 1
-                reward_right += 5
+                reward_right = +5
                 self.ball_dx *= -1
+                # Handle ball angle change based on paddle movement and ball direction
+                if self.ball_dy < 0:  # Ball coming down
+                    if action_right == 1:  # Paddle moving up
+                        self.ball_dy = 0  # Normal bounce: send ball back in opposite angle
+                    elif action_right == 2:  # Paddle moving down
+                        self.ball_dy = -1  # Send ball back up at same 45-degree angle
+                    elif action_right == 0:  # Paddle stationary
+                        self.ball_dy = -1  # Send ball back up at same 45-degree angle
+
+                elif self.ball_dy > 0:  # Ball coming up
+                    if action_right == 1:  # Paddle moving up
+                        self.ball_dy = 1  # Send ball back down at same 45-degree angle
+                    elif action_right == 2:  # Paddle moving down
+                        self.ball_dy = 0  # Send ball back in a straight vertical line
+                    elif action_right == 0:  # Paddle stationary
+                        self.ball_dy = 1  # Send ball back down at same 45-degree angle
+
+                elif self.ball_dy == 0:  # Ball coming straight
+                    if action_right == 1:  # Paddle moving up
+                        self.ball_dy = -1  # Send ball back at a 45-degree angle up
+                    elif action_right == 2:  # Paddle moving down
+                        self.ball_dy = 1  # Send ball back at a 45-degree angle down
+                    elif action_right == 0:  # Paddle stationary
+                        self.ball_dy = 0  # Send ball back in a straight vertical line
             else:
-                reward_left += 25
+                reward_right = -25
                 self.done = True
 
+        # make sure ball stays within grid bounds
+        self.ball_x = max(0, min(self.ball_x, self.grid_size - 1))
+        self.ball_y = max(0, min(self.ball_y, self.grid_size - 1))
+        
         self.current_step += 1
         if self.current_step >= self.max_steps:
             self.done = True
-        
+            
         return self.get_state(), (reward_left, reward_right), self.done
 
     def render(self):
