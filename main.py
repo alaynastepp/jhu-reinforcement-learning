@@ -85,14 +85,12 @@ def generate_episode(episode: int, env: PongEnv, agent: Type[Union[QLearningAgen
     # return the result of the game
     return rewards, episode_visit_count, current_state, win, env.get_score()
 
-def run_trials(agent_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], args) -> Dict[str, Union[float, np.ndarray, List[float]]]:
+def run_trials(agent_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], args : argparse.Namespace) -> Dict[str, Union[float, np.ndarray, List[float]]]:
     """
 	Based on the agent type passed in, run many agents for a certain amount of episodes and gather metrics on their performance
 
 	:param agent_class (class): One of the following: SARSA_0, QLearningAgent, or MonteCarlo.
-    :param alpha (float): Learning rate.
-    :param gamma (float): Discount factor.
-    :param epsilon (float): Exploration rate.
+    :param args (argparse.Namespace): Parsed arguments from argparse containing parameters such as alpha, gamma, and epsilon.
     :return Dict containing the following metrics:
             'avg_rewards': np.ndarray - Average rewards over all agents.
             'avg_wins': float - Overall win rate.

@@ -200,6 +200,11 @@ class PongEnv:
         raise NotImplementedError
     
     def get_score(self):
+        """
+        Gets the current score
+
+        :return (ing): current score
+        """
         return self.score
 
 env = PongEnv(grid_size=10)

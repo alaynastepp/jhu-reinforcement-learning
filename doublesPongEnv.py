@@ -12,6 +12,11 @@ class PongEnv:
         self.reset()
 
     def reset(self):
+        """"
+        Reset grid to the inital state.
+        
+        :return state (list): Current state: ball position, paddle position, and velocity
+        """
         self.ball_x = self.initial_ball_x
         self.ball_y = self.initial_ball_y
         self.ball_dx = self.initial_ball_dx
@@ -76,12 +81,30 @@ class PongEnv:
         return (ball_pos * 90) + (paddle_pos * 9) + ball_velocity
     
     def get_state(self):
+        """
+        Get the current state (ball position, two paddle positions, and velocity)
+        
+        :return state (list): Current state: ball position, two paddle paddle positions, and velocity
+        """
         return (self.ball_x, self.ball_y, self.paddle_y_left, self.paddle_y_right, self.ball_dx, self.ball_dy)
 
     def get_number_of_actions(self):
+        """ 
+        3 possible actions: move up, move down, or stay still
+        """
         return 3  # Actions: 0 = stay, 1 = move up, 2 = move down
 
     def execute_action(self, action_left, action_right):
+        """
+        Executes the action and returns the reward.
+        Actions: 0 = stay still, 1 = move up, 2 = move down
+        
+        :param action_left (int): The current action of the agent on the left side.
+        :param action_right (int): The current action of the agent on the right side.
+        :return state (list): Current state: ball position, paddle position, and velocity
+        :return reward (int): The action selected
+        :return done (bool): The action selected
+        """
         if action_left == 1 and self.paddle_y_left > 0:
             self.paddle_y_left -= 1
         elif action_left == 2 and self.paddle_y_left < self.grid_size - 1:
@@ -182,6 +205,9 @@ class PongEnv:
         return self.get_state(), (reward_left, reward_right), self.done
 
     def render(self):
+        """
+        Visualize the grid with ball and paddles
+        """
         grid = np.full((self.grid_size, self.grid_size), "0", dtype=str)
         grid[:, 0] = "|"
         grid[:, -1] = "|"
@@ -194,6 +220,11 @@ class PongEnv:
         print("\n")
     
     def get_score(self):
+        """
+        Gets the current scores
+
+        :return (ing): current score of left agent and right agent
+        """
         return (self.score_left, self.score_right)
 
 if __name__ == '__main__':

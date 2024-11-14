@@ -98,6 +98,19 @@ def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearnin
 
 
 def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], agent_right_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], args):
+    """
+	Based on the agent type passed in, run many agents for a certain amount of episodes and gather metrics on their performance
+
+	:param agent_class (class): One of the following: SARSA_0, QLearningAgent, or MonteCarlo.
+    :param args (argparse.Namespace): Parsed arguments from argparse containing parameters such as alpha, gamma, and epsilon. Can also contain 'pretrained' if we want to use a pretrained agent.
+    :return Dict containing the following metrics for each agent (left and right):
+            'avg_rewards': np.ndarray - Average rewards over all agents.
+            'avg_wins': float - Overall win rate.
+            'avg_scores': np.ndarray - Average scores over all agents.
+            'state_action_visit_count': np.ndarray - Visit counts for each state-action pair.
+            'win_statuses': np.ndarray - Array of win status for each episode.
+            'state_visit_percentages': List[float] - State visit percentages across episodes.
+	"""
     environment = PongEnv(grid_size=10)
     if args.viz:
         visualizer = PongVisualizer(grid_size=10, cell_size=60)
@@ -234,40 +247,52 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     }
 
 def run_trials_with_hyperparams(agent_left_class, agent_right_class, alpha_values: List[float], gamma_values: List[float], epsilon_values: List[float], args):
-    # This will hold the results for each set of hyperparameters
-    results = []
+    """
+    Runs multiple trials with different hyperparameter values and identifies the best configuration.
 
-    best_avg_reward = -np.inf
-    best_params = None
+    :param agent_class: The agent class to use for training.
+    :param alpha_values: A list of possible alpha (learning rate) values.
+    :param gamma_values: A list of possible gamma (discount factor) values.
+    :param epsilon_values: A list of possible epsilon (exploration rate) values.
+    """
+    best_avg_reward_left = -np.inf
+    best_params_left = None
     
-    trial_rewards_left = []
-    trial_rewards_right = []
-    trial_visits_left = np.zeros((8999, 3))
-    trial_visits_right = np.zeros((8999, 3))
+    best_avg_reward_right = -np.inf
+    best_params_right = None
 
     for alpha in alpha_values:
         for gamma in gamma_values:
             for epsilon in epsilon_values:
                 print(f"Training {agent_left_class.__name__} vs {agent_right_class.__name__} with alpha={alpha}, gamma={gamma}, epsilon={epsilon}...")
-                avg_reward_left, avg_reward_right, visits_left, visits_right = run_trials(agent_left, agent_right, args=args)
-
-                # Store the results for this trial
-                trial_rewards_left.append(avg_reward_left)
-                trial_rewards_right.append(avg_reward_right)
-                trial_visits_left += visits_left
-                trial_visits_right += visits_right
+                metrics = run_trials(agent_left, agent_right, args=args)
                 
-                if avg_reward_left > best_avg_reward:
-                    best_avg_reward = avg_reward_left
-                    best_params = (alpha, gamma, epsilon)
+                avg_reward_left = np.mean(metrics['avg_rewards_left'])
+                if avg_reward_left > best_avg_reward_left:
+                    best_avg_reward_left = avg_reward_left
+                    best_params_left = (alpha, gamma, epsilon)
+                    
+                avg_reward_right = np.mean(metrics['avg_rewards_right'])
+                if avg_reward_right > best_avg_reward_right:
+                    best_avg_reward_right = avg_reward_right
+                    best_params_right = (alpha, gamma, epsilon)
 
-    if best_params:
+    if best_params_left:
         print("\n" + "*" * 50)
-        print(f"***** Best Parameters Found *****")
-        print(f"* Alpha:    {best_params[0]:.4f}")
-        print(f"* Gamma:    {best_params[1]:.4f}")
-        print(f"* Epsilon:  {best_params[2]:.4f}")
-        print(f"* Avg Reward: {best_avg_reward:.2f}")
+        print(f"***** Best Parameters Found for Left Agent {agent_left_class.__name__} *****")
+        print(f"* Alpha:    {best_params_left[0]:.4f}")
+        print(f"* Gamma:    {best_params_left[1]:.4f}")
+        print(f"* Epsilon:  {best_params_left[2]:.4f}")
+        print(f"* Avg Reward: {best_params_left:.2f}")
+        print("*" * 50 + "\n")
+    
+    if best_params_right:
+        print("\n" + "*" * 50)
+        print(f"***** Best Parameters Found for Right Agent {agent_right_class.__name__} *****")
+        print(f"* Alpha:    {best_params_right[0]:.4f}")
+        print(f"* Gamma:    {best_params_right[1]:.4f}")
+        print(f"* Epsilon:  {best_params_right[2]:.4f}")
+        print(f"* Avg Reward: {best_params_right:.2f}")
         print("*" * 50 + "\n")
 
 def save_agent(agent, filename):
