@@ -58,7 +58,7 @@ class PongVisualizer:
         pygame.display.flip()
         
         # Set frame rate
-        pygame.time.Clock().tick(5)
+        pygame.time.Clock().tick(10)
 
     def close(self):
         pygame.quit()

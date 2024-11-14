@@ -10,7 +10,7 @@ from SARSA_alayna import SARSA_0
 from perfectAgent import PerfectAgent
 from MonteCarlo_alayna import MonteCarloAgent
 import metrics
-from basicPongEnv import PongEnv
+from pongEnv import PongEnv
 from pongVisualizer import PongVisualizer
 from MonteCarlo_kate import MonteCarlo
 from SARSA_kate import SARSA
@@ -33,7 +33,7 @@ def log(val):
 if METRICS_PATH and not os.path.exists(METRICS_PATH):
         os.makedirs(METRICS_PATH)
         
-def generate_episode(episode: int, env: PongEnv, agent, visualizer=None) -> Tuple[List[float], np.ndarray, Tuple, bool]:
+def generate_episode(episode: int, env: PongEnv, agent: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], visualizer=None) -> Tuple[List[float], np.ndarray, Tuple, bool]:
     """
     Play one episode in the environment using the agent and collect rewards.
 
@@ -134,6 +134,7 @@ def run_trials(agent_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA
                 episode_scores.append(score)
                 win_status.append(1 if win else 0)
                 wins += win
+                visit_count += episode_visit_count
                 if agent_class != PerfectAgent:
                     v_t = agent.get_visited_states_num()
                     V_t[i,0] = (v_t/agent.get_number_of_states())*100
@@ -142,7 +143,6 @@ def run_trials(agent_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA
             all_scores.append(episode_scores)
             total_wins += wins
             all_wins.append(win_status)
-            visit_count += episode_visit_count
             all_V_t.append(V_t.flatten())
             
             for reward in episode_rewards:
@@ -178,7 +178,7 @@ def run_trials(agent_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA
         'state_visit_percentages': all_V_t
     }
 
-def run_trials_with_hyperparams(agent_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], alpha_values: List[float], gamma_values: List[float], epsilon_values: List[float]) -> None:
+def run_trials_with_hyperparams(agent_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], alpha_values: List[float], gamma_values: List[float], epsilon_values: List[float], args) -> None:
     """
     Runs multiple trials with different hyperparameter values and identifies the best configuration.
 
@@ -196,7 +196,7 @@ def run_trials_with_hyperparams(agent_class: Type[Union[QLearningAgent, QLearnin
                 print(f"Training {agent_class.__name__} with alpha={alpha}, gamma={gamma}, epsilon={epsilon}...")
                 
                 metrics = run_trials(
-                    agent_class, alpha=alpha, gamma=gamma, epsilon=epsilon
+                    agent_class, alpha=alpha, gamma=gamma, epsilon=epsilon, args=args
                 )
                 
                 avg_reward = np.mean(metrics['avg_rewards'])
@@ -279,6 +279,7 @@ if __name__ == '__main__':
     win_statuses = []
     
     if args.monte:
+        print("Training Monte Carlo agent...")
         monte_metrics = run_trials(MonteCarloAgent, args=args)
         agents.append(MonteCarloAgent)
         agent_labels.append("Monte Carlo")
@@ -301,7 +302,6 @@ if __name__ == '__main__':
     
     if args.qlearning:
         print("Training Q-Learning agent...")
-        qlearning_metrics = run_trials(QLearningAgent, args=args)
         qlearning_metrics = run_trials(QLearningAgent, args=args)
         agents.append(QLearningAgent)
         agent_labels.append("Q-Learning")
@@ -341,15 +341,13 @@ if __name__ == '__main__':
         else:
             print("At least two agents are required for comparison.")
 
-        #verify_get_state_index(PongEnv())
-        
         # Tune hyperparameters
-        alpha_values = [0.01, 0.1, 0.5]  # Example learning rates
-        gamma_values = [0.5, 0.9, 0.95]  # Example discount factors
-        epsilon_values = [0.1, 0.2, 0.5]  # Example exploration rates
+        alpha_values = [0.01, 0.1, 0.5] 
+        gamma_values = [0.5, 0.9, 0.95] 
+        epsilon_values = [0.1, 0.2, 0.5] 
 
         # Run experiments for SARSA
-        #run_trials_with_hyperparams(SARSA_0, alpha_values, gamma_values, epsilon_values)
+        #run_trials_with_hyperparams(SARSA_0, alpha_values, gamma_values, epsilon_values, args)
 
         # Run experiments for Q-Learning
-        #run_trials_with_hyperparams(QLearningAgent, alpha_values, gamma_values, epsilon_values)
+        #run_trials_with_hyperparams(QLearningAgent, alpha_values, gamma_values, epsilon_values, args)
