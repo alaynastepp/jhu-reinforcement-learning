@@ -385,8 +385,14 @@ if __name__ == '__main__':
     
     results = run_trials(agent_left, agent_right, args)
     
+    if agent_left.__name__ == agent_right.__name__:
+        agent_labels.append(f"{str(agent_left.__name__)}_left")
+        agent_labels.append(f"{str(agent_right.__name__)}_right")
+    else:
+        agent_labels.append(str(agent_left.__name__))
+        agent_labels.append(str(agent_right.__name__))
+    
     agents.append(agent_left)
-    agent_labels.append(str(agent_left.__name__))
     avg_rewards.append(results["avg_rewards_left"])
     avg_scores.append(results["avg_scores_left"])
     visit_counts.append(results["state_action_visit_count_left"])
@@ -394,7 +400,6 @@ if __name__ == '__main__':
     win_statuses.append(results["win_statuses_left"])
     
     agents.append(agent_right)
-    agent_labels.append(str(agent_right.__name__))
     avg_rewards.append(results["avg_rewards_right"])
     avg_scores.append(results["avg_scores_right"])
     visit_counts.append(results["state_action_visit_count_right"])

@@ -209,5 +209,7 @@ class PongEnv:
 
 if __name__ == '__main__':
     env = PongEnv(grid_size=10)
+    state = env.reset()
+    print("Initial state:", state)
     print("Total states: ", env.get_number_of_states())
     print("Total actions: ", env.get_number_of_actions())
