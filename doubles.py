@@ -363,6 +363,12 @@ if __name__ == '__main__':
         agent_left = SARSA_0
     elif args.agent_left == 'qlearning':
         agent_left = QLearningAgent
+    elif args.agent_left.lower() == 'monte_kate':
+        agent_left = MonteCarlo
+    elif args.agent_left == 'sarsa_kate':
+        agent_left = SARSA
+    elif args.agent_left == 'qlearning_kate':
+        agent_left = QLearning
     else:
         raise ValueError(f"Unknown agent type for left agent: {args.agent_left}")
 
@@ -372,6 +378,12 @@ if __name__ == '__main__':
         agent_right = SARSA_0
     elif args.agent_right == 'qlearning':
         agent_right = QLearningAgent
+    elif args.agent_right.lower() == 'monte_kate':
+        agent_right = MonteCarlo
+    elif args.agent_right == 'sarsa_kate':
+        agent_right = SARSA
+    elif args.agent_right == 'qlearning_kate':
+        agent_right = QLearning
     else:
         raise ValueError(f"Unknown agent type for left agent: {args.agent_right}")
     
