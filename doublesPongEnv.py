@@ -231,16 +231,5 @@ if __name__ == '__main__':
     env = PongEnv(grid_size=10)
     state = env.reset()
     print("Initial state:", state)
-    print("Total actions:", env.get_number_of_actions())
-
-    for _ in range(5):
-        # Sample actions (0 = stay, 1 = up, 2 = down)
-        action_left = np.random.choice([0, 1, 2])
-        action_right = np.random.choice([0, 1, 2])
-        state, reward, done = env.execute_action(action_left, action_right)
-        env.render()
-        print("State:", state)
-        print("Reward:", reward)
-        print("Done:", done)
-        if done:
-            break
+    print("Total states: ", env.get_number_of_states())
+    print("Total actions: ", env.get_number_of_actions())

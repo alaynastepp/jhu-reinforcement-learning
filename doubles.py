@@ -35,6 +35,24 @@ if METRICS_PATH and not os.path.exists(METRICS_PATH):
         os.makedirs(METRICS_PATH)
 
 def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], agent_right: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], visualizer=None) -> Tuple[List[float], np.ndarray, Tuple, bool]:
+    """
+    Play one episode in the Pong environment with two agents (left and right) and collect rewards.
+
+    :param episode (int): Current episode number.
+    :param env (PongEnv): The Pong environment.
+    :param agent_left: The agent controlling the left paddle.
+    :param agent_right: The agent controlling the right paddle.
+    :param visualizer: Optional visualizer to render each step.
+
+    :return rewards_left (List[float]): Rewards collected by the left agent during the episode.
+    :return rewards_right (List[float]): Rewards collected by the right agent during the episode.
+    :return episode_visit_count_left (np.ndarray): State-action visit counts for the left agent.
+    :return episode_visit_count_right (np.ndarray): State-action visit counts for the right agent.
+    :return current_state (Tuple): The final state of the environment after the episode ends.
+    :return win_left (bool): True if the left agent wins the episode, False otherwise.
+    :return win_right (bool): True if the right agent wins the episode, False otherwise.
+    :return env_score (int): The final score of the environment after the episode ends.
+    """
     current_state = env.reset()
     log(f"Initial ball position: {env.ball_x}, paddle positions: {env.paddle_y_left}, {env.paddle_y_right}")
     
@@ -296,11 +314,26 @@ def run_trials_with_hyperparams(agent_left_class, agent_right_class, alpha_value
         print("*" * 50 + "\n")
 
 def save_agent(agent, filename):
+    """
+    Save the Q-table of an agent to a file using pickle.
+
+    :param agent: The agent whose Q-table is to be saved.
+    :param path (str): The file path where the Q-table will be saved.
+    """
     with open(filename, 'wb') as f:
         pickle.dump(agent.q_table, f)
     print(f"Agent saved to {filename}")
 
 def load_agent(agent_class, filename, *args, **kwargs):
+    """
+    Load an agent's Q-table from a file and initialize the agent.
+
+    :param agent_class: The class of the agent to be initialized (e.g., QLearningAgent).
+    :param filename (str): The file path from which the Q-table will be loaded.
+    :param *args: Additional positional arguments for initializing the agent.
+    :param **kwargs: Additional keyword arguments for initializing the agent.
+    :return: An instance of the agent with the loaded Q-table.
+    """
     # Initialize a new agent
     agent = agent_class(*args, **kwargs)
     # Load the saved Q-table
@@ -370,7 +403,6 @@ if __name__ == '__main__':
 
     # Only plot if visualization is requested
     if args.plot:
-
         metrics.plot_agent_scores(agent_name=str(agent_left.__name__), agent_scores=results["avg_scores_left"], save_path=METRICS_PATH)
         metrics.plot_state_visitation(results["state_visit_percentages_left"], str(agent_left.__name__), save_path=METRICS_PATH)
         metrics.plot_visit_percentage(agent_name=str(agent_left.__name__), visit_count=results["state_action_visit_count_left"], save_path=METRICS_PATH)

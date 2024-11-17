@@ -45,11 +45,13 @@ def generate_episode(episode: int, env: PongEnv, agent: Type[Union[QLearningAgen
     :param env (PongEnv): The Pong environment.
     :param agent: The agent that interacts with the environment.
     :param visualizer: Optional visualizer to render each step.
-    :return rewards (list): List of rewards collected in the episode.
-    :return final_state (tuple): The final state after the episode ends.
+    :return rewards (List[float]): A list of rewards collected during the episode.
+    :return episode_visit_count (np.ndarray): A 2D array tracking state-action visit counts for the episode.
+    :return current_state (Tuple): The final state of the environment after the episode ends.
+    :return win (bool): True if the agent wins the episode, False otherwise.
+    :return env_score (int): The score achieved in the environment after the episode ends.
     """
     current_state = env.reset()
-    # In generate_episode, after state reset:
     log(f"Initial ball position: {env.ball_x}, paddle position: {env.paddle_y}")
 
     game_end = False
@@ -215,11 +217,26 @@ def run_trials_with_hyperparams(agent_class: Type[Union[QLearningAgent, QLearnin
         print("*" * 50 + "\n")
 
 def save_agent(agent, path):
+    """
+    Save the Q-table of an agent to a file using pickle.
+
+    :param agent: The agent whose Q-table is to be saved.
+    :param path (str): The file path where the Q-table will be saved.
+    """
     with open(path, 'wb') as f:
         pickle.dump(agent.q_table, f)
     print(f"Agent saved to {path}")
 
 def load_agent(agent_class, filename, *args, **kwargs):
+    """
+    Load an agent's Q-table from a file and initialize the agent.
+
+    :param agent_class: The class of the agent to be initialized (e.g., QLearningAgent).
+    :param filename (str): The file path from which the Q-table will be loaded.
+    :param *args: Additional positional arguments for initializing the agent.
+    :param **kwargs: Additional keyword arguments for initializing the agent.
+    :return: An instance of the agent with the loaded Q-table.
+    """
     # Initialize a new agent
     agent = agent_class(*args, **kwargs)
     # Load the saved Q-table
