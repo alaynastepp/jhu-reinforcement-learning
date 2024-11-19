@@ -23,7 +23,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 EPISODE_COUNT = 1000
 WINDOW_LENGTH = 30
 EXP_STARTS = False
-DEBUG = False
+DEBUG = True
 METRICS_PATH = os.path.join(HERE, 'doubles-experiment1')
 TRAINED_AGENTS_PATH = os.path.join(HERE, 'trained_agents')
 
@@ -70,8 +70,8 @@ def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearnin
     episode_visit_count_right = np.zeros((env.get_number_of_states(), env.get_number_of_actions()))
     
     while not game_end:
-        state_index_left = env.get_state_index(agent="left")
-        state_index_right = env.get_state_index(agent="right")
+        state_index_left = env.get_state_index(agent_side="left")
+        state_index_right = env.get_state_index(agent_side="right")
 
         # Each agent selects its action independently based on the state
         action_left = agent_left.select_action(state_index_left)
@@ -79,12 +79,12 @@ def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearnin
 
         # Execute both actions in the environment
         new_state, reward, game_end = env.execute_action(action_left, action_right)
-        next_state_index_left = env.get_state_index(agent="left")
-        next_state_index_right = env.get_state_index(agent="right")
+        next_state_index_left = env.get_state_index(agent_side="left")
+        next_state_index_right = env.get_state_index(agent_side="right")
         
         log(f"Episode: {episode + 1}, New State: {new_state}, Reward: {reward}, Done: {game_end}")
-        #if DEBUG:
-        #    env.render()
+        if DEBUG:
+            env.render()
             
         reward_left, reward_right = reward
         rewards_left.append(reward_left)
@@ -101,7 +101,7 @@ def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearnin
         
         # Update both agents
         agent_left.update(next_state_index_left, reward_left)
-        agent_right.update(next_state_index_right, -reward_right)  # If reward is positive for one, it's negative for the other
+        agent_right.update(next_state_index_right, reward_right)  # If reward is positive for one, it's negative for the other
         
         if visualizer:
             ball_x, ball_y, paddle_y_left, paddle_y_right, ball_dx, ball_dy = env.get_state()
@@ -168,8 +168,8 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
 
     environment = PongEnv(grid_size=10)
     if args.pretrained:
-        agent_left = load_agent(agent_left_class, os.path.join(TRAINED_AGENTS_PATH, f'trained_{str(agent_left_class.__name__)}_9.pkl'), environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
-        agent_right = load_agent(agent_right_class, os.path.join(TRAINED_AGENTS_PATH, f'trained_{str(agent_right_class.__name__)}_9.pkl'), environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
+        agent_left = load_agent(agent_left_class, os.path.join(TRAINED_AGENTS_PATH, f'left_trained_{str(agent_left_class.__name__)}_9.pkl'), environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
+        agent_right = load_agent(agent_right_class, os.path.join(TRAINED_AGENTS_PATH, f'right_trained_{str(agent_right_class.__name__)}_9.pkl'), environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
     else:
         agent_left = agent_left_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
         agent_right = agent_right_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
@@ -237,7 +237,7 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     visit_count_450_to_900_left = visit_count_left[450:9000, :]
     percentage_visited_450_to_900_left = np.sum(visit_count_450_to_900_left > 0) / visit_count_450_to_900_left.size * 100 
 
-    print(str(agent_left_class.__name__))
+    print("\nLeft agent:", str(agent_left_class.__name__))
     metrics.pretty_print_metrics_all_ep(avg_rewards_all_left, avg_wins_all_left, percentage_visited_0_to_450_left, percentage_visited_450_to_900_left)
 
     # Calculate average rewards over all episodes
@@ -255,7 +255,7 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     percentage_visited_450_to_900_right = np.sum(visit_count_450_to_900_right > 0) / visit_count_450_to_900_right.size * 100 
 
     # Print results
-    print(str(agent_right_class.__name__))
+    print("Right Agent:", str(agent_right_class.__name__))
     metrics.pretty_print_metrics_all_ep(avg_rewards_all_right, avg_wins_all_right, percentage_visited_0_to_450_right, percentage_visited_450_to_900_right)
 
     #return avg_reward_left, avg_reward_right, total_visits_left, total_visits_right

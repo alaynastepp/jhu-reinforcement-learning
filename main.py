@@ -40,7 +40,7 @@ if METRICS_PATH:
         os.makedirs(METRICS_PATH)
         
 if TRAINED_AGENTS_PATH and not os.path.exists(TRAINED_AGENTS_PATH):
-        os.makedirs(METRICS_PATH)
+        os.makedirs(TRAINED_AGENTS_PATH)
         
 def generate_episode(episode: int, env: PongEnv, agent: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], visualizer=None) -> Tuple[List[float], np.ndarray, Tuple, bool]:
     """
@@ -83,8 +83,8 @@ def generate_episode(episode: int, env: PongEnv, agent: Type[Union[QLearningAgen
         # Update agent's knowledge
         agent.update(next_state_index, reward)
         if visualizer:
-            ball_x, ball_y, paddle_y, _, _ = env.get_state()
-            visualizer.render_static((ball_x, ball_y), paddle_y)
+            ball_x, ball_y, paddle_y, _, _, agent_side = env.get_state()
+            visualizer.render_static((ball_x, ball_y), paddle_y, agent_side)
         current_state = new_state
         
     if type(agent) is MonteCarlo or type(agent) is MonteCarloAgent:
@@ -108,7 +108,16 @@ def run_trials(agent_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA
             'win_statuses': np.ndarray - Array of win status for each episode.
             'state_visit_percentages': List[float] - State visit percentages across episodes.
 	"""
-    environment = PongEnv(grid_size=10)
+    if args.left:
+        agent_side="left"
+        environment = PongEnv(grid_size=10, agent_side="left")
+    elif args.right:
+        agent_side="right"
+        environment = PongEnv(grid_size=10, agent_side="right")
+    else:
+        environment = PongEnv(grid_size=10)
+        agent_side=environment.agent_side
+        
     if args.viz:
         visualizer = PongVisualizer(grid_size=10, cell_size=60)
     else:
@@ -158,7 +167,8 @@ def run_trials(agent_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA
             visualizer.close()
         
         # save off trained agent
-        save_agent(agent, os.path.join(TRAINED_AGENTS_PATH, f'trained_{str(agent_class.__name__)}_{a}.pkl'))
+        if args.save:
+            save_agent(agent, os.path.join(TRAINED_AGENTS_PATH, f'{agent_side}_trained_{str(agent_class.__name__)}_{a}.pkl'))
         
     # Calculate average rewards over the last 30 episodes
     avg_rewards_last_30 = np.mean([np.convolve(rewards, np.ones(30) / 30, mode='valid') for rewards in all_rewards], axis=0)
@@ -267,7 +277,9 @@ if __name__ == '__main__':
     parser.add_argument('--gamma', help="the value to be used for gamma")
     parser.add_argument('--learningrate', help='the value to be used for learning rate')
     parser.add_argument('--epsilon', help='the value to be used for epsilon')
-    parser.add_argument('--debug', action='store_true', help='if debug mode is turned on')
+    parser.add_argument('--left', action='store_true', help='if the agent is on the left side')
+    parser.add_argument('--right', action='store_true', help='if the agent is on the right side')
+    parser.add_argument('--save', action='store_true', help='if the agent should get saved off as a trained agent')
     
     args = parser.parse_args()
 

@@ -1,15 +1,21 @@
 import numpy as np
 
 class PongEnv:
-    def __init__(self, grid_size=10, ball_dx=1, ball_dy=1, ball_x=None, ball_y=None, max_steps=10000):
+    def __init__(self, grid_size=10, ball_dx=1, ball_dy=1, ball_x=None, ball_y=None, max_steps=1000):
         self.grid_size = grid_size
         self.initial_ball_dx = ball_dx
         self.initial_ball_dy = ball_dy
         self.initial_ball_x = ball_x if ball_x is not None else self.grid_size // 2
         self.initial_ball_y = ball_y if ball_y is not None else self.grid_size // 2
+        
+        self.paddle_y_right = self.grid_size // 2
+        self.paddle_y_left = self.grid_size // 2
+        
+        self.score_left = 0
+        self.score_right = 0
+        self.done = False
         self.current_step = 0
         self.max_steps = max_steps
-        self.reset()
 
     def reset(self):
         """"
@@ -37,49 +43,40 @@ class PongEnv:
         
         :return (int): Total number of states
         """
-        # max ball position is 9,9 
-        max_ball_pos = (self.grid_size - 1) * 10 + (self.grid_size - 1)
-
-        # max paddle position is 9
-        max_paddle = self.grid_size - 1
-
-        # with explanation above in get_state_index
-        # ball_dx = 1, ball_dy = 1
-        max_ball_velocity = (1 + 1) * 3 + (1 + 1)
+        grid_size = self.grid_size
+        num_ball_positions = grid_size * grid_size # ball_x and ball_y
+        num_paddle_positions = grid_size  # paddle_y
+        num_velocities = 3 * 3 # ball_dx and ball_dy (-1, 0, 1 for both)
+        side_factor = 2  # Two sides: left and right
         
-        return max_ball_pos * 90 + max_paddle * 9 + max_ball_velocity
+        total_states = num_ball_positions * num_paddle_positions * num_velocities * side_factor
+        return total_states
 
-    def get_state_index(self, agent="left"):
+    def get_state_index(self, agent_side: str):
         """
-        Convert the current state (ball position, paddle positions, and velocity) into a unique index,
-        based on the specified agent.
+        Convert the current state (ball position, paddle position, and velocity) into a unique index.
 
-        :param agent: The agent to compute the state index for ("left" or "right").
-        :return (int): The unique index representing the current state for the specified agent.
+        :return (int): The unique index representing the current state.
         """
-        # Encode the ball's position on a 2D grid (like coordinates)
+        # Encode the ball's position
         ball_pos = self.ball_x * self.grid_size + self.ball_y
-        
-        # Encode the vertical positions of both paddles (left and right)
-        paddle_left_pos = self.paddle_y_left
-        paddle_right_pos = self.paddle_y_right
-        
-        # Encode the ball’s velocity (dx and dy) into a unique index
-        ball_velocity = (self.ball_dx + 1) * 3 + (self.ball_dy + 1)  # Encode dx and dy values
 
-        # Depending on the agent specified, select the correct paddle position
-        if agent == "left":
-            paddle_pos = paddle_left_pos
-        elif agent == "right":
-            paddle_pos = paddle_right_pos
-        else:
-            raise ValueError("Invalid agent. Use 'left' or 'right'.")
+        # Encode the paddle's vertical position
+        paddle_pos = self.paddle_y_right if agent_side == "right" else self.paddle_y_left
 
-        # Combine them all
-        # Using different factors for ball_pos, paddle_pos, and ball_velocity
-        # ensures that each combination has a unique state index.
-        return (ball_pos * 90) + (paddle_pos * 9) + ball_velocity
-    
+        # Encode the ball's velocity
+        ball_velocity = (self.ball_dx + 1) * 3 + (self.ball_dy + 1)
+
+        # Encode the paddle side: 0 for left, 1 for right
+        paddle_side = 1 if agent_side == "right" else 0
+
+        # Combine all parts into a unique index
+        return (
+            ball_pos * (self.grid_size * 9 * 2) +  # Factor in the paddle side (2 states)
+            paddle_pos * 9 * 2 +                  # Factor in the paddle side (2 states)
+            ball_velocity * 2 +                   # Factor in the paddle side (2 states)
+            paddle_side
+        )
     def get_state(self):
         """
         Get the current state (ball position, two paddle positions, and velocity)
@@ -133,29 +130,7 @@ class PongEnv:
                 reward_left = +5
                 self.ball_dx *= -1
                 # Handle ball angle change based on paddle movement and ball direction
-                if self.ball_dy < 0:  # Ball coming down
-                    if action_left == 1:  # Paddle moving up
-                        self.ball_dy = 0  # Normal bounce: send ball back in opposite angle
-                    elif action_left == 2:  # Paddle moving down
-                        self.ball_dy = -1  # Send ball back up at same 45-degree angle
-                    elif action_left == 0:  # Paddle stationary
-                        self.ball_dy = -1  # Send ball back up at same 45-degree angle
-
-                elif self.ball_dy > 0:  # Ball coming up
-                    if action_left == 1:  # Paddle moving up
-                        self.ball_dy = 1  # Send ball back down at same 45-degree angle
-                    elif action_left == 2:  # Paddle moving down
-                        self.ball_dy = 0  # Send ball back in a straight vertical line
-                    elif action_left == 0:  # Paddle stationary
-                        self.ball_dy = 1  # Send ball back down at same 45-degree angle
-
-                elif self.ball_dy == 0:  # Ball coming straight
-                    if action_left == 1:  # Paddle moving up
-                        self.ball_dy = -1  # Send ball back at a 45-degree angle up
-                    elif action_left == 2:  # Paddle moving down
-                        self.ball_dy = 1  # Send ball back at a 45-degree angle down
-                    elif action_left == 0:  # Paddle stationary
-                        self.ball_dy = 0  # Send ball back in a straight vertical line
+                self.ball_dy = self.update_ball_angle(action_left, self.ball_dy)
             else:
                 reward_left = -25
                 self.done = True
@@ -167,29 +142,7 @@ class PongEnv:
                 reward_right = +5
                 self.ball_dx *= -1
                 # Handle ball angle change based on paddle movement and ball direction
-                if self.ball_dy < 0:  # Ball coming down
-                    if action_right == 1:  # Paddle moving up
-                        self.ball_dy = 0  # Normal bounce: send ball back in opposite angle
-                    elif action_right == 2:  # Paddle moving down
-                        self.ball_dy = -1  # Send ball back up at same 45-degree angle
-                    elif action_right == 0:  # Paddle stationary
-                        self.ball_dy = -1  # Send ball back up at same 45-degree angle
-
-                elif self.ball_dy > 0:  # Ball coming up
-                    if action_right == 1:  # Paddle moving up
-                        self.ball_dy = 1  # Send ball back down at same 45-degree angle
-                    elif action_right == 2:  # Paddle moving down
-                        self.ball_dy = 0  # Send ball back in a straight vertical line
-                    elif action_right == 0:  # Paddle stationary
-                        self.ball_dy = 1  # Send ball back down at same 45-degree angle
-
-                elif self.ball_dy == 0:  # Ball coming straight
-                    if action_right == 1:  # Paddle moving up
-                        self.ball_dy = -1  # Send ball back at a 45-degree angle up
-                    elif action_right == 2:  # Paddle moving down
-                        self.ball_dy = 1  # Send ball back at a 45-degree angle down
-                    elif action_right == 0:  # Paddle stationary
-                        self.ball_dy = 0  # Send ball back in a straight vertical line
+                self.ball_dy = self.update_ball_angle(action_right, self.ball_dy)
             else:
                 reward_right = -25
                 self.done = True
@@ -203,7 +156,36 @@ class PongEnv:
             self.done = True
             
         return self.get_state(), (reward_left, reward_right), self.done
-
+    
+    def update_ball_angle(self, action, ball_dy):
+        """
+        Update ball angle based on paddle movement.
+        :param action (int): The current action.
+        :param ball_dy (int): The current velocity of the ball in the y direction.
+        : return (int): Updated velocity of the ball in the y direction.
+        """
+        if ball_dy < 0:  # Ball coming down
+            if action == 1:  # Paddle moving up
+                return 0
+            elif action == 2:  # Paddle moving down
+                return -1
+            else:  # Paddle stationary
+                return -1
+        elif ball_dy > 0:  # Ball coming up
+            if action == 1:  # Paddle moving up
+                return 1
+            elif action == 2:  # Paddle moving down
+                return 0
+            else:  # Paddle stationary
+                return 1
+        else:  # Ball coming straight
+            if action == 1:  # Paddle moving up
+                return -1
+            elif action == 2:  # Paddle moving down
+                return 1
+            else:  # Paddle stationary
+                return 0
+    
     def render(self):
         """
         Visualize the grid with ball and paddles
@@ -211,9 +193,9 @@ class PongEnv:
         grid = np.full((self.grid_size, self.grid_size), "0", dtype=str)
         grid[:, 0] = "|"
         grid[:, -1] = "|"
+        grid[self.ball_y, self.ball_x] = "*"
         grid[self.paddle_y_left, 0] = "L"
         grid[self.paddle_y_right, -1] = "R"
-        grid[self.ball_y, self.ball_x] = "*"
 
         for row in grid:
             print(" ".join(row))
@@ -227,9 +209,64 @@ class PongEnv:
         """
         return (self.score_left, self.score_right)
 
+
+def verify_unique_indices(env) -> bool:
+    """
+    Verify that all possible state indexes generated by get_state_index are unique.
+    
+    :param env: The environment object with state space parameters.
+    :return: True if all state indexes are unique, False otherwise.
+    """
+    unique_indices = set()
+    duplicates = False
+    grid_size = env.grid_size
+    sides = ["left", "right"]
+
+    # Loop through all possible states
+    for ball_x in range(grid_size):
+        for ball_y in range(grid_size):
+            for paddle_y in range(grid_size):
+                for ball_dx in [-1, 0, 1]:
+                    for ball_dy in [-1, 0, 1]:
+                        for agent in sides:
+                            # Set the environment's state variables
+                            env.ball_x = ball_x
+                            env.ball_y = ball_y
+                            env.paddle_y_left = paddle_y if agent == "left" else env.paddle_y_left
+                            env.paddle_y_right = paddle_y if agent == "right" else env.paddle_y_right
+                            env.ball_dx = ball_dx
+                            env.ball_dy = ball_dy
+
+                            # Get the state index for the current agent
+                            state_index = env.get_state_index(agent)
+
+                            # Check for uniqueness of the state index
+                            if state_index in unique_indices:
+                                print(f"Duplicate index found: "
+                                    f"Ball position ({ball_x}, {ball_y}), "
+                                    f"Velocity ({ball_dx}, {ball_dy}), "
+                                    f"Paddle position {paddle_y}, "
+                                    f"Agent {agent} -> State Index: {state_index}")
+                                duplicates = True
+                            else:
+                                unique_indices.add(state_index)
+
+                            total_states = env.get_number_of_states()
+                            assert (0 <= state_index < total_states), f"State index {state_index} out of bounds (0 to {total_states - 1})"
+
+    # Final summary
+    if duplicates:
+        print("There are duplicates in the state index calculations.")
+    else:
+        print("All state indices are unique. `get_state_index` logic appears correct.")
+    print(f"Total unique states checked: {len(unique_indices)}")
+
+
 if __name__ == '__main__':
     env = PongEnv(grid_size=10)
     state = env.reset()
     print("Initial state:", state)
     print("Total states: ", env.get_number_of_states())
     print("Total actions: ", env.get_number_of_actions())
+    verify_unique_indices(env)
+
