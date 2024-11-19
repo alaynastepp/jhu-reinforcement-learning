@@ -23,7 +23,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 EPISODE_COUNT = 1000
 WINDOW_LENGTH = 30
 EXP_STARTS = False
-DEBUG = True
+DEBUG = False
 METRICS_PATH = os.path.join(HERE, 'doubles-experiment1')
 TRAINED_AGENTS_PATH = os.path.join(HERE, 'trained_agents')
 
