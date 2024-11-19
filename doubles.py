@@ -19,7 +19,6 @@ from kate_files.QLearning_agent import QLearning
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-AGENT_COUNT = 10
 EPISODE_COUNT = 1000
 WINDOW_LENGTH = 30
 EXP_STARTS = False
@@ -100,7 +99,7 @@ def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearnin
         
         if visualizer:
             ball_x, ball_y, paddle_y_left, paddle_y_right, ball_dx, ball_dy = env.get_state()
-            visualizer.render((ball_x, ball_y), paddle_y_right)
+            visualizer.render_dynamic((ball_x, ball_y), paddle_y_left, paddle_y_right)
         
         current_state = new_state
     
@@ -152,65 +151,64 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     visit_count_right = np.zeros((environment.get_number_of_states(), environment.get_number_of_actions())) #raw count of how many times a specific state-action pair has been visited across episodes
     all_V_t_right = []
 
-    for a in range(AGENT_COUNT):
-        # Alternate ball_dx direction for each environment instance
-        initial_ball_dx = 1 if a % 2 == 0 else -1
-        initial_ball_dy = np.random.choice([-1, 1])
+    environment = PongEnv(grid_size=10)
+    if args.pretrained:
+        agent_left = load_agent(agent_left_class, os.path.join(TRAINED_AGENTS_PATH, f'trained_{str(agent_left_class.__name__)}_9.pkl'), environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
+        agent_right = load_agent(agent_right_class, os.path.join(TRAINED_AGENTS_PATH, f'trained_{str(agent_right_class.__name__)}_9.pkl'), environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
+    else:
+        agent_left = agent_left_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
+        agent_right = agent_right_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
+    
+    episode_rewards_left = []
+    episode_scores_left = []
+    win_status_left = []
+    V_t_left = np.zeros((EPISODE_COUNT,1))  # percent states visited per episode
+    wins_left = 0
+    episode_rewards_right = []
+    episode_scores_right = []
+    win_status_right = []
+    V_t_right = np.zeros((EPISODE_COUNT,1))  # percent states visited per episode
+    wins_right = 0
+    for i in range(EPISODE_COUNT):
+        # Alternate ball_dx direction for each episode 
+        initial_ball_dx = 1 if i % 2 == 0 else -1
+        initial_ball_dy = 1 if (i // 2) % 2 == 0 else -1
         environment = PongEnv(grid_size=10, ball_dx=initial_ball_dx, ball_dy=initial_ball_dy)
-        if args.pretrained:
-            agent_left = load_agent(agent_left_class, os.path.join(TRAINED_AGENTS_PATH, f'trained_{str(agent_left_class.__name__)}_{a}.pkl'), environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
-            agent_right = load_agent(agent_right_class, os.path.join(TRAINED_AGENTS_PATH, f'trained_{str(agent_right_class.__name__)}_{a}.pkl'), environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
-        else:
-            agent_left = agent_left_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
-            agent_right = agent_right_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
+    
+        log(f"Starting episode {i + 1}")
         
-        episode_rewards_left = []
-        episode_scores_left = []
-        win_status_left = []
-        V_t_left = np.zeros((EPISODE_COUNT,1))  # percent states visited per episode
-        wins_left = 0
-        episode_rewards_right = []
-        episode_scores_right = []
-        win_status_right = []
-        V_t_right = np.zeros((EPISODE_COUNT,1))  # percent states visited per episode
-        wins_right = 0
-        for i in range(EPISODE_COUNT):
-            log(f"Starting episode {i + 1}")
-            
-            rewards_left, rewards_right, episode_visit_count_left, episode_visit_count_right, final_state, win_left, win_right, score = generate_episode(
-                i, environment, agent_left, agent_right, visualizer
-            )
-          
-            score_left, score_right = score
-            episode_rewards_left.append(sum(rewards_left))
-            episode_rewards_right.append(sum(rewards_right))
-            episode_scores_left.append(score_left)
-            episode_scores_right.append(score_right)
-            win_status_left.append(1 if win_left else 0)
-            win_status_right.append(1 if win_right else 0)
-            wins_left += win_left
-            wins_right += win_right
-            visit_count_left += episode_visit_count_left
-            visit_count_right += episode_visit_count_right
-            v_t_left = agent_left.get_visited_states_num()
-            v_t_right = agent_right.get_visited_states_num()
-            V_t_left[i,0] = (v_t_left/agent_left.get_number_of_states())*100
-            V_t_right[i,0] = (v_t_right/agent_right.get_number_of_states())*100
-
-            # Optionally, log more detailed information about the episode, such as win/loss
-            log(f"Episode {i + 1} finished. Left Agent Reward: {np.sum(rewards_left)}, Right Agent Reward: {np.sum(rewards_right)}")
-            log(f"Final score: {score}, Win Left: {win_left}, Win Right: {win_right}")
-
-        all_rewards_left.append(episode_rewards_left)
-        all_rewards_right.append(episode_rewards_right)
-        all_scores_left.append(episode_scores_left)
-        all_scores_right.append(episode_scores_right)
-        total_wins_left += wins_left
-        total_wins_right += wins_right
-        all_wins_left.append(win_status_left)
-        all_wins_right.append(win_status_right)
-        all_V_t_left.append(V_t_left.flatten())
-        all_V_t_right.append(V_t_right.flatten())
+        rewards_left, rewards_right, episode_visit_count_left, episode_visit_count_right, final_state, win_left, win_right, score = generate_episode(
+            i, environment, agent_left, agent_right, visualizer
+        )
+      
+        score_left, score_right = score
+        episode_rewards_left.append(sum(rewards_left))
+        episode_rewards_right.append(sum(rewards_right))
+        episode_scores_left.append(score_left)
+        episode_scores_right.append(score_right)
+        win_status_left.append(1 if win_left else 0)
+        win_status_right.append(1 if win_right else 0)
+        wins_left += win_left
+        wins_right += win_right
+        visit_count_left += episode_visit_count_left
+        visit_count_right += episode_visit_count_right
+        v_t_left = agent_left.get_visited_states_num()
+        v_t_right = agent_right.get_visited_states_num()
+        V_t_left[i,0] = (v_t_left/agent_left.get_number_of_states())*100
+        V_t_right[i,0] = (v_t_right/agent_right.get_number_of_states())*100
+        # Optionally, log more detailed information about the episode, such as win/loss
+        log(f"Episode {i + 1} finished. Left Agent Reward: {np.sum(rewards_left)}, Right Agent Reward: {np.sum(rewards_right)}")
+        log(f"Final score: {score}, Win Left: {win_left}, Win Right: {win_right}")
+    all_rewards_left.append(episode_rewards_left)
+    all_rewards_right.append(episode_rewards_right)
+    all_scores_left.append(episode_scores_left)
+    all_scores_right.append(episode_scores_right)
+    total_wins_left += wins_left
+    total_wins_right += wins_right
+    all_wins_left.append(win_status_left)
+    all_wins_right.append(win_status_right)
+    all_V_t_left.append(V_t_left.flatten())
+    all_V_t_right.append(V_t_right.flatten())
     
     # Calculate average rewards over the last 30 episodes
     avg_rewards_last_30_left = np.mean([np.convolve(rewards, np.ones(30) / 30, mode='valid') for rewards in all_rewards_left], axis=0)

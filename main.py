@@ -77,7 +77,7 @@ def generate_episode(episode: int, env: PongEnv, agent: Type[Union[QLearningAgen
         agent.update(next_state_index, reward)
         if visualizer:
             ball_x, ball_y, paddle_y, _, _ = env.get_state()
-            visualizer.render((ball_x, ball_y), paddle_y)
+            visualizer.render_static((ball_x, ball_y), paddle_y)
         current_state = new_state
         
     if type(agent) is MonteCarlo or type(agent) is MonteCarloAgent:
