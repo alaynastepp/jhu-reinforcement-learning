@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import shutil
 from typing import List, Tuple, Dict, Type, Union
 import argparse
 import pickle
@@ -31,7 +32,11 @@ def log(val):
 	if DEBUG:
 		print(val)
 
-if METRICS_PATH and not os.path.exists(METRICS_PATH):
+if METRICS_PATH:
+    if not os.path.exists(METRICS_PATH):
+        os.makedirs(METRICS_PATH)
+    else:
+        shutil.rmtree(METRICS_PATH)
         os.makedirs(METRICS_PATH)
         
 if TRAINED_AGENTS_PATH and not os.path.exists(TRAINED_AGENTS_PATH):
@@ -71,8 +76,10 @@ def generate_episode(episode: int, env: PongEnv, agent: Type[Union[QLearningAgen
             env.render()
         rewards.append(reward)
         episode_visit_count[state_index, action] += 1
-        if game_end and reward > 0:
+        
+        if game_end and (sum(rewards) > 0):
             win = True
+
         # Update agent's knowledge
         agent.update(next_state_index, reward)
         if visualizer:

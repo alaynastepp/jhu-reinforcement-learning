@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import shutil
 from typing import List, Tuple, Dict, Type, Union
 import argparse
 import pickle 
@@ -30,7 +31,11 @@ def log(val):
 	if DEBUG:
 		print(val)
 
-if METRICS_PATH and not os.path.exists(METRICS_PATH):
+if METRICS_PATH:
+    if not os.path.exists(METRICS_PATH):
+        os.makedirs(METRICS_PATH)
+    else:
+        shutil.rmtree(METRICS_PATH)
         os.makedirs(METRICS_PATH)
 
 def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], agent_right: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], visualizer=None) -> Tuple[List[float], np.ndarray, Tuple, bool]:
@@ -43,14 +48,15 @@ def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearnin
     :param agent_right: The agent controlling the right paddle.
     :param visualizer: Optional visualizer to render each step.
 
-    :return rewards_left (List[float]): Rewards collected by the left agent during the episode.
-    :return rewards_right (List[float]): Rewards collected by the right agent during the episode.
-    :return episode_visit_count_left (np.ndarray): State-action visit counts for the left agent.
-    :return episode_visit_count_right (np.ndarray): State-action visit counts for the right agent.
-    :return current_state (Tuple): The final state of the environment after the episode ends.
-    :return win_left (bool): True if the left agent wins the episode, False otherwise.
-    :return win_right (bool): True if the right agent wins the episode, False otherwise.
-    :return env_score (int): The final score of the environment after the episode ends.
+    ::return (dict): A dictionary containing the following keys:
+        - 'rewards_left' (List[float]): Rewards collected by the left agent during the episode.
+        - 'rewards_right' (List[float]): Rewards collected by the right agent during the episode.
+        - 'episode_visit_count_left' (np.ndarray): State-action visit counts for the left agent.
+        - 'episode_visit_count_right' (np.ndarray): State-action visit counts for the right agent.
+        - 'current_state' (Tuple): The final state of the environment after the episode ends.
+        - 'win_left' (bool): True if the left agent wins the episode, False otherwise.
+        - 'win_right' (bool): True if the right agent wins the episode, False otherwise.
+        - 'env_score' (int): The final score of the environment after the episode ends.
     """
     current_state = env.reset()
     log(f"Initial ball position: {env.ball_x}, paddle positions: {env.paddle_y_left}, {env.paddle_y_right}")
@@ -77,8 +83,8 @@ def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearnin
         next_state_index_right = env.get_state_index(agent="right")
         
         log(f"Episode: {episode + 1}, New State: {new_state}, Reward: {reward}, Done: {game_end}")
-        if DEBUG:
-            env.render()
+        #if DEBUG:
+        #    env.render()
             
         reward_left, reward_right = reward
         rewards_left.append(reward_left)
@@ -88,9 +94,9 @@ def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearnin
         episode_visit_count_left[state_index_left, action_left] += 1
         episode_visit_count_right[state_index_right, action_right] += 1
         
-        if game_end and reward_left > 0:
+        if game_end and (sum(rewards_left) > 0):
             win_left = True
-        if game_end and reward_right > 0:
+        if game_end and (sum(rewards_right) > 0):
             win_right = True
         
         # Update both agents
@@ -111,7 +117,16 @@ def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearnin
         agent_right.update_q()
         agent_right.clear_trajectory()
   
-    return rewards_left, rewards_right, episode_visit_count_left, episode_visit_count_right, current_state, win_left, win_right, env.get_score()
+    return {
+        'rewards_left': rewards_left,
+        'rewards_right': rewards_right,
+        'episode_visit_count_left': episode_visit_count_left,
+        'episode_visit_count_right': episode_visit_count_right,
+        'current_state': current_state,
+        'win_left': win_left,
+        'win_right': win_right,
+        'score': env.get_score()
+    }
 
 
 def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], agent_right_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], args):
@@ -177,28 +192,26 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     
         log(f"Starting episode {i + 1}")
         
-        rewards_left, rewards_right, episode_visit_count_left, episode_visit_count_right, final_state, win_left, win_right, score = generate_episode(
-            i, environment, agent_left, agent_right, visualizer
-        )
+        results = generate_episode(i, environment, agent_left, agent_right, visualizer)
       
-        score_left, score_right = score
-        episode_rewards_left.append(sum(rewards_left))
-        episode_rewards_right.append(sum(rewards_right))
+        score_left, score_right = results['score']
+        episode_rewards_left.append(sum(results['rewards_left']))
+        episode_rewards_right.append(sum(results['rewards_right']))
         episode_scores_left.append(score_left)
         episode_scores_right.append(score_right)
-        win_status_left.append(1 if win_left else 0)
-        win_status_right.append(1 if win_right else 0)
-        wins_left += win_left
-        wins_right += win_right
-        visit_count_left += episode_visit_count_left
-        visit_count_right += episode_visit_count_right
+        win_status_left.append(1 if results['win_left'] else 0)
+        win_status_right.append(1 if results['win_right'] else 0)
+        wins_left += results['win_left']
+        wins_right += results['win_right']
+        visit_count_left += results['episode_visit_count_left']
+        visit_count_right += results['episode_visit_count_right']
         v_t_left = agent_left.get_visited_states_num()
         v_t_right = agent_right.get_visited_states_num()
         V_t_left[i,0] = (v_t_left/agent_left.get_number_of_states())*100
         V_t_right[i,0] = (v_t_right/agent_right.get_number_of_states())*100
         # Optionally, log more detailed information about the episode, such as win/loss
-        log(f"Episode {i + 1} finished. Left Agent Reward: {np.sum(rewards_left)}, Right Agent Reward: {np.sum(rewards_right)}")
-        log(f"Final score: {score}, Win Left: {win_left}, Win Right: {win_right}")
+        log(f"Episode {i + 1} finished. Left Agent Reward: {np.sum(results['rewards_left'])}, Right Agent Reward: {np.sum(results['rewards_right'])}")
+        log(f"Final score: {results['score']}, Win Left: {results['win_left']}, Win Right: {results['win_right']}")
     all_rewards_left.append(episode_rewards_left)
     all_rewards_right.append(episode_rewards_right)
     all_scores_left.append(episode_scores_left)
@@ -210,12 +223,11 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     all_V_t_left.append(V_t_left.flatten())
     all_V_t_right.append(V_t_right.flatten())
     
-    # Calculate average rewards over the last 30 episodes
-    avg_rewards_last_30_left = np.mean([np.convolve(rewards, np.ones(30) / 30, mode='valid') for rewards in all_rewards_left], axis=0)
-
-    # Calculate percentage of wins for the last 30 episodes
-    recent_wins_left = np.mean([win_status[-30:] for win_status in all_wins_left], axis=0)
-    avg_wins_last_30_left = np.mean(recent_wins_left)  
+    # Calculate average rewards over all episodes
+    avg_rewards_all_left = np.mean([np.mean(rewards) for rewards in all_rewards_left])
+    
+    # Calculate percentage of wins for all episodes
+    avg_wins_all_left = np.mean([np.mean(win_status) for win_status in all_wins_left])
 
     # Visit count for states 0 to 450 only
     visit_count_0_to_450_left = visit_count_left[:450, :]
@@ -226,14 +238,13 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     percentage_visited_450_to_900_left = np.sum(visit_count_450_to_900_left > 0) / visit_count_450_to_900_left.size * 100 
 
     print(str(agent_left_class.__name__))
-    metrics.pretty_print_metrics(avg_rewards_last_30_left, avg_wins_last_30_left, percentage_visited_0_to_450_left, percentage_visited_450_to_900_left)
+    metrics.pretty_print_metrics_all_ep(avg_rewards_all_left, avg_wins_all_left, percentage_visited_0_to_450_left, percentage_visited_450_to_900_left)
 
-    # Calculate average rewards over the last 30 episodes
-    avg_rewards_last_30_right = np.mean([np.convolve(rewards, np.ones(30) / 30, mode='valid') for rewards in all_rewards_right], axis=0)
+    # Calculate average rewards over all episodes
+    avg_rewards_all_right = np.mean([np.mean(rewards) for rewards in all_rewards_right])
 
-    # Calculate percentage of wins for the last 30 episodes
-    recent_wins_right = np.mean([win_status[-30:] for win_status in all_wins_right], axis=0)
-    avg_wins_last_30_right = np.mean(recent_wins_right)  
+    # Calculate percentage of wins for all episodes
+    avg_wins_all_right = np.mean([np.mean(win_status) for win_status in all_wins_right])
 
     # Visit count for states 0 to 450 only
     visit_count_0_to_450_right = visit_count_right[:450, :]
@@ -243,9 +254,10 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     visit_count_450_to_900_right = visit_count_right[450:9000, :]
     percentage_visited_450_to_900_right = np.sum(visit_count_450_to_900_right > 0) / visit_count_450_to_900_right.size * 100 
 
+    # Print results
     print(str(agent_right_class.__name__))
-    metrics.pretty_print_metrics(avg_rewards_last_30_right, avg_wins_last_30_right, percentage_visited_0_to_450_right, percentage_visited_450_to_900_right)
-    
+    metrics.pretty_print_metrics_all_ep(avg_rewards_all_right, avg_wins_all_right, percentage_visited_0_to_450_right, percentage_visited_450_to_900_right)
+
     #return avg_reward_left, avg_reward_right, total_visits_left, total_visits_right
     return {
         'avg_rewards_left': np.mean(all_rewards_left, axis=0),
