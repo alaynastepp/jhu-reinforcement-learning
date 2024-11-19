@@ -6,16 +6,16 @@ from typing import List, Tuple, Dict, Type, Union
 import argparse
 import pickle
 
-from QLearning_alayna import QLearningAgent
-from SARSA_alayna import SARSA_0
-from perfectAgent import PerfectAgent
-from MonteCarlo_alayna import MonteCarloAgent
+from alayna_files.QLearning_agent import QLearningAgent
+from alayna_files.SARSA_agent import SARSA_0
+from alayna_files.perfect_agent import PerfectAgent
+from alayna_files.MonteCarlo_agent import MonteCarloAgent
 import metrics
 from pongEnv import PongEnv
 from pongVisualizer import PongVisualizer
-from MonteCarlo_kate import MonteCarlo
-from SARSA_kate import SARSA
-from QLearning_kate import QLearning
+from kate_files.MonteCarlo_agent import MonteCarlo
+from kate_files.SARSA_agent import SARSA
+from kate_files.QLearning_agent import QLearning
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
