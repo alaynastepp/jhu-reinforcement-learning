@@ -70,8 +70,8 @@ def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearnin
     episode_visit_count_right = np.zeros((env.get_number_of_states(), env.get_number_of_actions()))
     
     while not game_end:
-        state_index_left = env.get_state_index(agent="left")
-        state_index_right = env.get_state_index(agent="right")
+        state_index_left = env.get_state_index()
+        state_index_right = env.get_state_index()
 
         # Each agent selects its action independently based on the state
         action_left = agent_left.select_action(state_index_left)
@@ -79,8 +79,8 @@ def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearnin
 
         # Execute both actions in the environment
         new_state, reward, game_end = env.execute_action(action_left, action_right)
-        next_state_index_left = env.get_state_index(agent="left")
-        next_state_index_right = env.get_state_index(agent="right")
+        next_state_index_left = env.get_state_index()
+        next_state_index_right = env.get_state_index()
         
         log(f"Episode: {episode + 1}, New State: {new_state}, Reward: {reward}, Done: {game_end}")
         #if DEBUG:
@@ -237,7 +237,7 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     visit_count_450_to_900_left = visit_count_left[450:9000, :]
     percentage_visited_450_to_900_left = np.sum(visit_count_450_to_900_left > 0) / visit_count_450_to_900_left.size * 100 
 
-    print(str(agent_left_class.__name__))
+    print("\nLeft agent:", str(agent_left_class.__name__))
     metrics.pretty_print_metrics_all_ep(avg_rewards_all_left, avg_wins_all_left, percentage_visited_0_to_450_left, percentage_visited_450_to_900_left)
 
     # Calculate average rewards over all episodes
@@ -255,7 +255,7 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     percentage_visited_450_to_900_right = np.sum(visit_count_450_to_900_right > 0) / visit_count_450_to_900_right.size * 100 
 
     # Print results
-    print(str(agent_right_class.__name__))
+    print("Right Agent:", str(agent_right_class.__name__))
     metrics.pretty_print_metrics_all_ep(avg_rewards_all_right, avg_wins_all_right, percentage_visited_0_to_450_right, percentage_visited_450_to_900_right)
 
     #return avg_reward_left, avg_reward_right, total_visits_left, total_visits_right
@@ -351,6 +351,7 @@ def load_agent(agent_class, filename, *args, **kwargs):
         agent.q_table = pickle.load(f)
     print(f"Agent loaded from {filename}")
     return agent
+
 
 if __name__ == '__main__':
     

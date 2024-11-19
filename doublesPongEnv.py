@@ -7,9 +7,15 @@ class PongEnv:
         self.initial_ball_dy = ball_dy
         self.initial_ball_x = ball_x if ball_x is not None else self.grid_size // 2
         self.initial_ball_y = ball_y if ball_y is not None else self.grid_size // 2
+        
+        self.paddle_y_right = self.grid_size // 2
+        self.paddle_y_left = self.grid_size // 2
+        
+        self.score_left = 0
+        self.score_right = 0
+        self.done = False
         self.current_step = 0
         self.max_steps = max_steps
-        self.reset()
 
     def reset(self):
         """"
@@ -24,62 +30,49 @@ class PongEnv:
         
         self.paddle_y_right = self.grid_size // 2
         self.paddle_y_left = self.grid_size // 2
+        
         self.score_left = 0
         self.score_right = 0
         self.done = False
         self.current_step = 0
 
         return self.get_state()
-    
-    def get_number_of_states(self):
-        """
-        Number of possible states (based on ball position, paddle position, and ball velocity)
         
-        :return (int): Total number of states
+    def get_number_of_states(self) -> int:
         """
-        # max ball position is 9,9 
-        max_ball_pos = (self.grid_size - 1) * 10 + (self.grid_size - 1)
-
-        # max paddle position is 9
-        max_paddle = self.grid_size - 1
-
-        # with explanation above in get_state_index
-        # ball_dx = 1, ball_dy = 1
-        max_ball_velocity = (1 + 1) * 3 + (1 + 1)
-        
-        return max_ball_pos * 90 + max_paddle * 9 + max_ball_velocity
-
-    def get_state_index(self, agent="left"):
+        Calculates the total number of states possible in the Pong environment.
         """
-        Convert the current state (ball position, paddle positions, and velocity) into a unique index,
-        based on the specified agent.
+        grid_size = self.grid_size
+        num_ball_positions = grid_size * grid_size  # ball_x and ball_y
+        num_velocities = 3 * 3  # ball_dx and ball_dy (-1, 0, 1 for both)
+        num_paddle_positions = grid_size * grid_size  # paddle_y_left and paddle_y_right
 
-        :param agent: The agent to compute the state index for ("left" or "right").
-        :return (int): The unique index representing the current state for the specified agent.
-        """
-        # Encode the ball's position on a 2D grid (like coordinates)
-        ball_pos = self.ball_x * self.grid_size + self.ball_y
-        
-        # Encode the vertical positions of both paddles (left and right)
-        paddle_left_pos = self.paddle_y_left
-        paddle_right_pos = self.paddle_y_right
-        
-        # Encode the ball’s velocity (dx and dy) into a unique index
-        ball_velocity = (self.ball_dx + 1) * 3 + (self.ball_dy + 1)  # Encode dx and dy values
+        total_states = num_ball_positions * num_velocities * num_paddle_positions
+        return total_states
 
-        # Depending on the agent specified, select the correct paddle position
-        if agent == "left":
-            paddle_pos = paddle_left_pos
-        elif agent == "right":
-            paddle_pos = paddle_right_pos
-        else:
-            raise ValueError("Invalid agent. Use 'left' or 'right'.")
+    def get_state_index(self):
+        ball_x = self.ball_x
+        ball_y = self.ball_y
+        paddle_y_left = self.paddle_y_left
+        paddle_y_right = self.paddle_y_right
+        ball_dx = self.ball_dx
+        ball_dy = self.ball_dy
 
-        # Combine them all
-        # Using different factors for ball_pos, paddle_pos, and ball_velocity
-        # ensures that each combination has a unique state index.
-        return (ball_pos * 90) + (paddle_pos * 9) + ball_velocity
-    
+        # Map -1 -> 0, 0 -> 1, 1 -> 2 for dx and dy
+        ball_dx_index = ball_dx + 1  # Maps -1 -> 0, 0 -> 1, 1 -> 2
+        ball_dy_index = ball_dy + 1  # Maps -1 -> 0, 0 -> 1, 1 -> 2
+
+        # Linear approach: state index calculation
+        index = (ball_x
+                + ball_y * self.grid_size
+                + paddle_y_left * self.grid_size * self.grid_size
+                + paddle_y_right * self.grid_size * self.grid_size * self.grid_size
+                + ball_dx_index * self.grid_size * self.grid_size * self.grid_size * self.grid_size
+                + ball_dy_index * self.grid_size * self.grid_size * self.grid_size * self.grid_size * 3)  # Adjust the scale here
+
+        return index
+
+
     def get_state(self):
         """
         Get the current state (ball position, two paddle positions, and velocity)
@@ -227,9 +220,102 @@ class PongEnv:
         """
         return (self.score_left, self.score_right)
 
+def verify_unique_indices(env: PongEnv):
+    unique_indices = set()
+    duplicates = False
+    grid_size = env.grid_size
+
+    # Iterate over all possible values for ball position, velocity, and paddle position
+    for ball_x in range(grid_size):
+        for ball_y in range(grid_size):
+            for ball_dx in [-1, 0, 1]:  # Horizontal velocity: left, neutral, right
+                for ball_dy in [-1, 0, 1]:  # Vertical velocity: up, neutral, down
+                    for paddle_y_left in range(grid_size):  # Left paddle position
+                        for paddle_y_right in range(grid_size):  # Right paddle position
+                            # Set the environment's state
+                            env.ball_x = ball_x
+                            env.ball_y = ball_y
+                            env.paddle_y_left = paddle_y_left
+                            env.paddle_y_right = paddle_y_right
+                            env.ball_dx = ball_dx
+                            env.ball_dy = ball_dy
+
+                            # Get the index for the current state
+                            state_index = env.get_state_index()
+
+                            # Check if the index is already in the set
+                            if state_index in unique_indices:
+                                print(f"Duplicate index found: "
+                                  f"Ball position ({ball_x}, {ball_y}), "
+                                  f"Velocity ({ball_dx}, {ball_dy}), "
+                                  f"Left paddle position {paddle_y_left}, "
+                                  f"Right paddle position {paddle_y_right} -> State Index: {state_index}")
+                                duplicates = True
+                            else:
+                                unique_indices.add(state_index)
+                            
+                            total_states = env.get_number_of_states()
+                            assert (0 <= state_index < total_states), f"State index {state_index} out of bounds (0 to {total_states - 1})"
+
+    # Final summary
+    if duplicates:
+        print("There are duplicates in the state index calculations.")
+    else:
+        print("All state indices are unique. `get_state_index` logic appears correct.")
+    print(f"Total unique states checked: {len(unique_indices)}")
+
+def check_max_state_index(env):
+    """
+    Checks if the maximum calculated state index exceeds the total number of states
+    by using get_state_index() with maximum state values.
+    Returns True if the maximum index is valid, False otherwise.
+    """
+    grid_size = env.grid_size
+    
+    # Save the current state of the environment
+    current_ball_x = env.ball_x
+    current_ball_y = env.ball_y
+    current_paddle_y_left = env.paddle_y_left
+    current_paddle_y_right = env.paddle_y_right
+    current_ball_dx = env.ball_dx
+    current_ball_dy = env.ball_dy
+
+    # Set the state variables to their maximum values
+    env.ball_x = grid_size - 1
+    env.ball_y = grid_size - 1
+    env.paddle_y_left = grid_size - 1
+    env.paddle_y_right = grid_size - 1
+    env.ball_dx = 1  # Maximum dx value
+    env.ball_dy = 1  # Maximum dy value
+
+    # Get the state index using the modified state
+    max_index = env.get_state_index()
+
+    # Restore the environment's state
+    env.ball_x = current_ball_x
+    env.ball_y = current_ball_y
+    env.paddle_y_left = current_paddle_y_left
+    env.paddle_y_right = current_paddle_y_right
+    env.ball_dx = current_ball_dx
+    env.ball_dy = current_ball_dy
+
+    total_states = env.get_number_of_states()
+    
+    # Check if the calculated maximum index is within bounds
+    if max_index >= total_states:
+        print(f"Warning: The calculated maximum index ({max_index}) exceeds the total states ({total_states})!")
+        return False
+    else:
+        print(f"Maximum index ({max_index}) is within the bounds of total states ({total_states}).")
+        return True
+
+
 if __name__ == '__main__':
     env = PongEnv(grid_size=10)
     state = env.reset()
     print("Initial state:", state)
     print("Total states: ", env.get_number_of_states())
     print("Total actions: ", env.get_number_of_actions())
+    check_max_state_index(env)
+    verify_unique_indices(env)
+

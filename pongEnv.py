@@ -7,9 +7,13 @@ class PongEnv:
         self.initial_ball_dy = ball_dy
         self.initial_ball_x = ball_x if ball_x is not None else self.grid_size // 2 # if not specificed, ball starts in the center
         self.initial_ball_y = ball_y if ball_y is not None else self.grid_size // 2 # if not specificed, ball starts in the center
+        
+        self.paddle_y = self.grid_size // 2
+        
+        self.score = 0
+        self.done = False
         self.current_step = 0
         self.max_steps = max_steps
-        self.reset()
 
     def reset(self):
         """"
@@ -73,17 +77,13 @@ class PongEnv:
         
         :return (int): Total number of states
         """
-        # max ball position is 9,9 
-        max_ball_pos = (self.grid_size - 1) * 10 + (self.grid_size - 1)
-
-        # max paddle position is 9
-        max_paddle = self.grid_size - 1
-
-        # with explanation above in get_state_index
-        # ball_dx = 1, ball_dy = 1
-        max_ball_velocity = (1 + 1) * 3 + (1 + 1)
-        
-        return max_ball_pos * 90 + max_paddle * 9 + max_ball_velocity
+        grid_size = self.grid_size
+        num_ball_positions = grid_size * grid_size  # ball_x and ball_y
+        num_paddle_positions = grid_size  # paddle_y
+        num_velocities = 3 * 3  # ball_dx and ball_dy (-1, 0, 1 for both)
+    
+        total_states = num_ball_positions * num_paddle_positions * num_velocities
+        return total_states
 
     def get_number_of_actions(self):
         """ 
@@ -207,9 +207,49 @@ class PongEnv:
         """
         return self.score
 
+def verify_unique_indices(env):
+    unique_indices = set()
+    duplicates = False
+    grid_size = env.grid_size  
+
+    # Iterate over all possible values for ball position, velocity, and paddle position
+    for ball_x in range(grid_size):
+        for ball_y in range(grid_size):
+            for ball_dx in [-1, 0, 1]:   # Assuming velocities are only -1 or +1
+                for ball_dy in [-1, 0, 1]:
+                    for paddle_y in range(grid_size):
+                        # Set the environment to this state
+                        env.ball_x, env.ball_y = ball_x, ball_y
+                        env.ball_dx, env.ball_dy = ball_dx, ball_dy
+                        env.paddle_y = paddle_y
+
+                        # Calculate the state index
+                        state_index = env.get_state_index()
+
+                        # Check for uniqueness of the state index
+                        if state_index in unique_indices:
+                            print(f"Duplicate index found: "
+                                  f"Ball position ({ball_x}, {ball_y}), "
+                                  f"Velocity ({ball_dx}, {ball_dy}), "
+                                  f"Paddle position {paddle_y} -> State Index: {state_index}")
+                            duplicates = True
+                        else:
+                            unique_indices.add(state_index)
+
+                        total_states = env.get_number_of_states()
+                        assert (0 <= state_index < total_states), f"State index {state_index} out of bounds (0 to {total_states - 1})"
+
+    # Final summary
+    if duplicates:
+        print("There are duplicates in the state index calculations.")
+    else:
+        print("All state indices are unique. `get_state_index` logic appears correct.")
+    print(f"Total unique states checked: {len(unique_indices)}")
+
 if __name__ == '__main__':
     env = PongEnv(grid_size=10)
     state = env.reset()
     print("Initial state:", state)
     print("Total states: ", env.get_number_of_states())
     print("Total actions: ", env.get_number_of_actions())
+    verify_unique_indices(env)

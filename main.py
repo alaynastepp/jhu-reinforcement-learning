@@ -252,44 +252,6 @@ def load_agent(agent_class, filename, *args, **kwargs):
     print(f"Agent loaded from {filename}")
     return agent
 
-#TODO - remove! this just checks that all state index values are unique
-def verify_get_state_index(env):
-    unique_indices = set()
-    duplicates = False
-    grid_size = env.grid_size  # Assuming grid_size is the dimension of your environment
-
-    # Iterate over all possible values for ball position, velocity, and paddle position
-    for ball_x in range(grid_size):
-        for ball_y in range(grid_size):
-            for ball_dx in [-1, 0, 1]:   # Assuming velocities are only -1 or +1
-                for ball_dy in [-1, 0, 1]:
-                    for paddle_y in range(grid_size):
-
-                        # Set the environment to this state
-                        env.ball_x, env.ball_y = ball_x, ball_y
-                        env.ball_dx, env.ball_dy = ball_dx, ball_dy
-                        env.paddle_y = paddle_y
-
-                        # Calculate the state index
-                        state_index = env.get_state_index()
-
-                        # Check for uniqueness of the state index
-                        if state_index in unique_indices:
-                            print(f"Duplicate index found for state: "
-                                  f"Ball position ({ball_x}, {ball_y}), "
-                                  f"Velocity ({ball_dx}, {ball_dy}), "
-                                  f"Paddle position {paddle_y} -> State Index: {state_index}")
-                            duplicates = True
-                        else:
-                            unique_indices.add(state_index)
-
-    # Final summary
-    if duplicates:
-        print("There are duplicates in the state index calculations.")
-    else:
-        print("All state indices are unique. `get_state_index` logic appears correct.")
-    print(f"Total unique states checked: {len(unique_indices)}")
-
 
 if __name__ == '__main__':
     
@@ -308,7 +270,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true', help='if debug mode is turned on')
     
     args = parser.parse_args()
-    
+
     #print("Running Perfect agent...")
     #perfect_metrics = run_trials(PerfectAgent, args=args)
     agents = []

@@ -14,7 +14,7 @@ def pretty_print_metrics(avg_rewards, avg_wins, percentage_visited_0_to_450, per
     print("====================\n")
     
 def pretty_print_metrics_all_ep(avg_rewards, avg_wins, percentage_visited_0_to_450, percentage_visited_450_to_900):
-    print("\nExperiment Metrics:")
+    print("Experiment Metrics:")
     print("====================")
     print(f"Average Rewards (all episodes): {avg_rewards.mean():.2f}")
     print(f"Average Win Rate (all episodes): {avg_wins * 100:.2f}%")
