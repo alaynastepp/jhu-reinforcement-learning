@@ -7,16 +7,16 @@ from typing import List, Tuple, Dict, Type, Union
 import argparse
 import pickle
 
-from alayna_files.QLearning_agent import QLearningAgent
-from alayna_files.SARSA_agent import SARSA_0
-from alayna_files.perfect_agent import PerfectAgent
-from alayna_files.MonteCarlo_agent import MonteCarloAgent
+from alayna_agents.QLearning_agent import QLearningAgent
+from alayna_agents.SARSA_agent import SARSA_0
+from alayna_agents.perfect_agent import PerfectAgent
+from alayna_agents.MonteCarlo_agent import MonteCarloAgent
 import metrics
 from pongEnv import PongEnv
 from pongVisualizer import PongVisualizer
-from kate_files.MonteCarlo_agent import MonteCarlo
-from kate_files.SARSA_agent import SARSA
-from kate_files.QLearning_agent import QLearning
+from kate_agents.MonteCarlo_agent import MonteCarlo
+from kate_agents.SARSA_agent import SARSA
+from kate_agents.QLearning_agent import QLearning
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -187,10 +187,9 @@ def run_trials(agent_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA
 
     metrics.pretty_print_metrics(avg_rewards_last_30, avg_wins_last_30, percentage_visited_0_to_450, percentage_visited_450_to_900)
     
-    #return avg_rewards, avg_wins, visit_count, np.mean(all_wins, axis=0), all_V_t
     return {
         'avg_rewards': np.mean(all_rewards, axis=0),
-        'avg_wins': total_wins / (AGENT_COUNT * EPISODE_COUNT),  # Calculate win rate,
+        'avg_wins': total_wins / (AGENT_COUNT * EPISODE_COUNT),  # Calculate win rate
         'avg_scores': np.mean(all_scores, axis=0),
         'state_action_visit_count': visit_count,
         'win_statuses': np.mean(all_wins, axis=0),

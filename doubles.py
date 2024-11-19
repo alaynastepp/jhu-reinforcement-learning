@@ -7,16 +7,16 @@ from typing import List, Tuple, Dict, Type, Union
 import argparse
 import pickle 
 
-from alayna_files.QLearning_agent import QLearningAgent
-from alayna_files.SARSA_agent import SARSA_0
-from alayna_files.perfect_agent import PerfectAgent
-from alayna_files.MonteCarlo_agent import MonteCarloAgent
+from alayna_agents.QLearning_agent import QLearningAgent
+from alayna_agents.SARSA_agent import SARSA_0
+from alayna_agents.perfect_agent import PerfectAgent
+from alayna_agents.MonteCarlo_agent import MonteCarloAgent
 import metrics
 from doublesPongEnv import PongEnv
 from pongVisualizer import PongVisualizer
-from kate_files.MonteCarlo_agent import MonteCarlo
-from kate_files.SARSA_agent import SARSA
-from kate_files.QLearning_agent import QLearning
+from kate_agents.MonteCarlo_agent import MonteCarlo
+from kate_agents.SARSA_agent import SARSA
+from kate_agents.QLearning_agent import QLearning
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
