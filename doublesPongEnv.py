@@ -205,7 +205,7 @@ class PongEnv:
         """
         Gets the current scores
 
-        :return (ing): current score of left agent and right agent
+        :return ((int, int)): current score of left agent and right agent
         """
         return (self.score_left, self.score_right)
 

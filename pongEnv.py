@@ -206,7 +206,7 @@ class PongEnv:
         """
         Gets the current score
 
-        :return (ing): current score
+        :return (int): current score
         """
         return self.score
 

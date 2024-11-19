@@ -182,3 +182,19 @@ def plot_all_agents_scores(agent_scores: List[np.ndarray], agent_labels: List[st
         plt.savefig(file_path)
     #plt.show()
     
+def smooth_data(data: np.ndarray, window_size: int = 10) -> np.ndarray:
+    return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
+
+def plot_all_agents_scores_smoothed(agent_scores: List[np.ndarray], agent_labels: List[str], save_path=None):
+    plt.figure(figsize=(10, 6))
+    for i, scores in enumerate(agent_scores):
+        smoothed_scores = smooth_data(scores)
+        plt.plot(smoothed_scores, label=agent_labels[i])
+    plt.title("Agent Performance Comparison (Smoothed)")
+    plt.xlabel("Episodes")
+    plt.ylabel("Average Score")
+    plt.legend(loc='best')
+    if save_path:
+        file_path = os.path.join(save_path, "all_scores_smoothed.png")
+        plt.savefig(file_path)
+   
