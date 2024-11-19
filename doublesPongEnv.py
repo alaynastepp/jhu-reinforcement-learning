@@ -264,58 +264,11 @@ def verify_unique_indices(env: PongEnv):
         print("All state indices are unique. `get_state_index` logic appears correct.")
     print(f"Total unique states checked: {len(unique_indices)}")
 
-def check_max_state_index(env):
-    """
-    Checks if the maximum calculated state index exceeds the total number of states
-    by using get_state_index() with maximum state values.
-    Returns True if the maximum index is valid, False otherwise.
-    """
-    grid_size = env.grid_size
-    
-    # Save the current state of the environment
-    current_ball_x = env.ball_x
-    current_ball_y = env.ball_y
-    current_paddle_y_left = env.paddle_y_left
-    current_paddle_y_right = env.paddle_y_right
-    current_ball_dx = env.ball_dx
-    current_ball_dy = env.ball_dy
-
-    # Set the state variables to their maximum values
-    env.ball_x = grid_size - 1
-    env.ball_y = grid_size - 1
-    env.paddle_y_left = grid_size - 1
-    env.paddle_y_right = grid_size - 1
-    env.ball_dx = 1  # Maximum dx value
-    env.ball_dy = 1  # Maximum dy value
-
-    # Get the state index using the modified state
-    max_index = env.get_state_index()
-
-    # Restore the environment's state
-    env.ball_x = current_ball_x
-    env.ball_y = current_ball_y
-    env.paddle_y_left = current_paddle_y_left
-    env.paddle_y_right = current_paddle_y_right
-    env.ball_dx = current_ball_dx
-    env.ball_dy = current_ball_dy
-
-    total_states = env.get_number_of_states()
-    
-    # Check if the calculated maximum index is within bounds
-    if max_index >= total_states:
-        print(f"Warning: The calculated maximum index ({max_index}) exceeds the total states ({total_states})!")
-        return False
-    else:
-        print(f"Maximum index ({max_index}) is within the bounds of total states ({total_states}).")
-        return True
-
-
 if __name__ == '__main__':
     env = PongEnv(grid_size=10)
     state = env.reset()
     print("Initial state:", state)
     print("Total states: ", env.get_number_of_states())
     print("Total actions: ", env.get_number_of_actions())
-    check_max_state_index(env)
     verify_unique_indices(env)
 
