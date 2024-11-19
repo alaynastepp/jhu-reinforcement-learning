@@ -2,3 +2,5 @@
 __pycache__/
 *.txt
 trained_agents/*
+experiment1/
+doubles-experiment1/
