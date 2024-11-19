@@ -447,7 +447,6 @@ if __name__ == '__main__':
             metrics.plot_mean_visited_states_percentage(visit_counts, agent_labels, save_path=METRICS_PATH)
             metrics.plot_all_agents_scores(avg_scores, agent_labels, save_path=METRICS_PATH)
             metrics.plot_all_agents_scores_smoothed(avg_scores, agent_labels, save_path=METRICS_PATH)
-            metrics.plot_all_agents_scores_transparent(avg_scores, agent_labels, save_path=METRICS_PATH)
             metrics.plot_winning_percentage_over_episodes(win_statuses, agent_labels, save_path=METRICS_PATH)
         else:
             print("At least two agents are required for comparison.")

@@ -36,7 +36,8 @@ def plot_visit_percentage(agent_name, visit_count, save_path=None):
         file_path = os.path.join(save_path, f"{agent_name.lower()}_visit_percentage.png")
         plt.savefig(file_path)
     #plt.show()
-
+    plt.close()
+    
 def plot_winning_percentage(agent_labels: List[str], avg_wins: List[float], save_path=None):
     plt.figure(figsize=(10, 6))
     # Plotting each agent's winning percentage dynamically
@@ -47,7 +48,8 @@ def plot_winning_percentage(agent_labels: List[str], avg_wins: List[float], save
         file_path = os.path.join(save_path, "winning_percentage.png")
         plt.savefig(file_path)
     #plt.show()
-
+    plt.close()
+    
 def plot_cumulative_return(avg_rewards: List[np.ndarray], agent_labels: List[str], save_path=None):
     plt.figure(figsize=(10, 6))
     for i, rewards in enumerate(avg_rewards):
@@ -60,7 +62,8 @@ def plot_cumulative_return(avg_rewards: List[np.ndarray], agent_labels: List[str
         file_path = os.path.join(save_path, "cumulative_return.png")
         plt.savefig(file_path)
     #plt.show()
-
+    plt.close()
+    
 def plot_mean_visited_states_percentage(visit_counts: List[np.ndarray], agent_labels: List[str], save_path=None):
     plt.figure(figsize=(10, 6))
     visited_states = [np.sum(visit_count > 0) / visit_count.size * 100 for visit_count in visit_counts]
@@ -71,7 +74,8 @@ def plot_mean_visited_states_percentage(visit_counts: List[np.ndarray], agent_la
         file_path = os.path.join(save_path, "mean_visited_states_percentages.png")
         plt.savefig(file_path)
     #plt.show()
-
+    plt.close()
+    
 def plot_winning_percentage_over_episodes(win_statuses, agent_labels, save_path=None):
     """
     Plots the winning percentage over episodes for multiple agents based on win statuses.
@@ -98,6 +102,7 @@ def plot_winning_percentage_over_episodes(win_statuses, agent_labels, save_path=
         file_path = os.path.join(save_path, "winning_percentage_over_episodes.png")
         plt.savefig(file_path)
     #plt.show()
+    plt.close()
 
 def plot_mean_visited_states_per_action(visit_count, agent_name, save_path=None):
     visit_percentage = (visit_count / np.sum(visit_count)) * 100
@@ -113,7 +118,8 @@ def plot_mean_visited_states_per_action(visit_count, agent_name, save_path=None)
         file_path = os.path.join(save_path, f"{agent_name.lower()}_mean_visited_states.png")
         plt.savefig(file_path)
     #plt.show()
-
+    plt.close()
+    
 def plot_state_action_distribution(visit_count, agent_name, save_path=None):
     plt.figure(figsize=(12, 6))
     visit_counts_per_action = np.sum(visit_count, axis=0)
@@ -126,7 +132,8 @@ def plot_state_action_distribution(visit_count, agent_name, save_path=None):
         file_path = os.path.join(save_path, f"{agent_name.lower()}_state_action_distribution.png")
         plt.savefig(file_path)
     #plt.show()
-
+    plt.close()
+    
 def plot_state_visitation(all_V_t, agent_class_name, save_path=None):
     """
     Plots the state visitation percentage (V_t) over episodes for all agents combined.
@@ -148,6 +155,7 @@ def plot_state_visitation(all_V_t, agent_class_name, save_path=None):
         file_path = os.path.join(save_path, f"{agent_class_name.lower()}_state_visualization.png")
         plt.savefig(file_path)
     #plt.show()
+    plt.close()
 
 def plot_agent_scores(agent_scores: np.ndarray, agent_name: str, save_path:str = None):
     """
@@ -167,7 +175,7 @@ def plot_agent_scores(agent_scores: np.ndarray, agent_name: str, save_path:str =
         file_path = os.path.join(save_path, f"{agent_name.lower()}_scores.png")
         plt.savefig(file_path)
     #plt.show()
-
+    plt.close()
     
 def plot_all_agents_scores(agent_scores: List[np.ndarray], agent_labels: List[str], save_path=None):
     plt.figure(figsize=(10, 6))
@@ -181,6 +189,7 @@ def plot_all_agents_scores(agent_scores: List[np.ndarray], agent_labels: List[st
         file_path = os.path.join(save_path, "all_scores.png")
         plt.savefig(file_path)
     #plt.show()
+    plt.close()
     
 def smooth_data(data: np.ndarray, window_size: int = 10) -> np.ndarray:
     return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
@@ -197,4 +206,5 @@ def plot_all_agents_scores_smoothed(agent_scores: List[np.ndarray], agent_labels
     if save_path:
         file_path = os.path.join(save_path, "all_scores_smoothed.png")
         plt.savefig(file_path)
-   
+    #plt.show()
+    plt.close()
