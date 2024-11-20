@@ -18,12 +18,12 @@ from pongVisualizer import PongVisualizer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-AGENT_COUNT = 1
+AGENT_COUNT = 10
 EPISODE_COUNT = 1000
 WINDOW_LENGTH = 30
 EXP_STARTS = False
 DEBUG = False
-METRICS_PATH = os.path.join(HERE, 'experiment2')
+METRICS_PATH = os.path.join(HERE, 'experiment1')
 TRAINED_AGENTS_PATH = os.path.join(HERE, 'trained_agents')
 
 def log(val):
@@ -283,7 +283,7 @@ if __name__ == '__main__':
     parser.add_argument('--viz', action='store_true', help="if visualization is wanted")
     parser.add_argument('--plot', action='store_true', help="if plotting is wanted")
     parser.add_argument('--gamma', help="the value to be used for gamma")
-    parser.add_argument('--learningrate', help='the value to be used for learning rate')
+    parser.add_argument('--alpha', help='the value to be used for learning rate')
     parser.add_argument('--epsilon', help='the value to be used for epsilon')
     parser.add_argument('--left', action='store_true', help='if the agent is on the left side')
     parser.add_argument('--right', action='store_true', help='if the agent is on the right side')
@@ -296,17 +296,17 @@ if __name__ == '__main__':
     if args.monte:
         print("Training Monte Carlo agent...")
         monte_metrics = run_trials(MonteCarlo, args=args)
-        results.append(createDict("Monte Carlo"), MonteCarlo, monte_metrics)
+        results.append(createDict("Monte Carlo", MonteCarlo, monte_metrics))
   
     if args.sarsa:
         print("Training SARSA agent...")
         sarsa_metrics = run_trials(SARSA, args=args)
-        results.append(createDict("SARSA"), SARSA, sarsa_metrics)
+        results.append(createDict("SARSA", SARSA, sarsa_metrics))
     
     if args.qlearning:
         print("Training Q-Learning agent...")
         qlearning_metrics = run_trials(QLearning, args=args)
-        results.append(createDict("Q-Learning"), QLearning, qlearning_metrics)
+        results.append(createDict("Q-Learning", QLearning, qlearning_metrics))
         
     # Only plot if visualization is requested
     if args.plot:
@@ -346,7 +346,7 @@ if __name__ == '__main__':
     epsilon_values = [0.01, 0.1, 0.2, 0.5] 
 
     # Run experiments for SARSA
-    run_trials_with_hyperparams(QLearning, alpha_values, gamma_values, epsilon_values, args)
+    #run_trials_with_hyperparams(SARSA, alpha_values, gamma_values, epsilon_values, args)
 
     # Run experiments for Q-Learning
-    #run_trials_with_hyperparams(QLearningAgent, alpha_values, gamma_values, epsilon_values, args)
+    #run_trials_with_hyperparams(QLearning, alpha_values, gamma_values, epsilon_values, args)
