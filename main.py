@@ -92,6 +92,14 @@ def generate_episode(episode: int, env: PongEnv, agent: Type[Union[QLearning, SA
     # return the result of the game
     return rewards, episode_visit_count, current_state, win, env.get_score()
 
+def reset_environment(args):
+    if args.left:
+        return PongEnv(grid_size=10, agent_side="left")
+    elif args.right:
+        return PongEnv(grid_size=10, agent_side="right")
+    else:
+        return PongEnv(grid_size=10)
+
 def run_trials(agent_class: Type[Union[QLearning, SARSA, MonteCarlo, PerfectAgent]], args : argparse.Namespace) -> Dict[str, Union[float, np.ndarray, List[float]]]:
     """
 	Based on the agent type passed in, run many agents for a certain amount of episodes and gather metrics on their performance
@@ -106,16 +114,9 @@ def run_trials(agent_class: Type[Union[QLearning, SARSA, MonteCarlo, PerfectAgen
             'win_statuses': np.ndarray - Array of win status for each episode.
             'state_visit_percentages': List[float] - State visit percentages across episodes.
 	"""
-    if args.left:
-        agent_side="left"
-        environment = PongEnv(grid_size=10, agent_side="left")
-    elif args.right:
-        agent_side="right"
-        environment = PongEnv(grid_size=10, agent_side="right")
-    else:
-        environment = PongEnv(grid_size=10)
-        agent_side=environment.agent_side
-        
+    
+    environment = reset_environment(args)
+
     if args.viz:
         visualizer = PongVisualizer(grid_size=10, cell_size=60)
     else:
@@ -133,6 +134,7 @@ def run_trials(agent_class: Type[Union[QLearning, SARSA, MonteCarlo, PerfectAgen
     all_V_t = [] #percentage of the total states that have been visited 
     
     for a in range(AGENT_COUNT):
+        environment = reset_environment(args)
         if agent_class == PerfectAgent:
             agent = agent_class(environment) 
         else:
@@ -346,7 +348,7 @@ if __name__ == '__main__':
     epsilon_values = [0.01, 0.1, 0.2, 0.5] 
 
     # Run experiments for SARSA
-    run_trials_with_hyperparams(QLearning, alpha_values, gamma_values, epsilon_values, args)
+    run_trials_with_hyperparams(SARSA, alpha_values, gamma_values, epsilon_values, args)
 
     # Run experiments for Q-Learning
     #run_trials_with_hyperparams(QLearningAgent, alpha_values, gamma_values, epsilon_values, args)

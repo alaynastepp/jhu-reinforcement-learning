@@ -1,12 +1,21 @@
 import numpy as np
+import random
 
 class PongEnv:
-    def __init__(self, grid_size=10, ball_dx=1, ball_dy=1, ball_x=None, ball_y=None, max_steps=20000, agent_side='right'):
+    def __init__(self, grid_size=10, ball_dx=1, ball_dy=1, ball_x=None, ball_y=None, max_steps=2000, agent_side='right', random_start=True):
         self.grid_size = grid_size
-        self.initial_ball_dx = ball_dx
-        self.initial_ball_dy = ball_dy
-        self.initial_ball_x = ball_x if ball_x is not None else self.grid_size // 2
-        self.initial_ball_y = ball_y if ball_y is not None else self.grid_size // 2
+
+        if random_start:
+            self.initial_ball_dx = random.choice([-1, 1])
+            self.initial_ball_dy = random.choice([-1, 1])
+            self.initial_ball_x = random.choice(range(1, self.grid_size))
+            self.initial_ball_y = random.choice(range(1, self.grid_size))
+        else:
+            self.initial_ball_dx = ball_dx
+            self.initial_ball_dy = ball_dy
+            self.initial_ball_x = ball_x if ball_x is not None else self.grid_size // 2
+            self.initial_ball_y = ball_y if ball_y is not None else self.grid_size // 2
+        
         self.agent_side = agent_side  
         self.paddle_y = self.grid_size // 2
         
