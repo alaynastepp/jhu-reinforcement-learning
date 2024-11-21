@@ -300,8 +300,7 @@ if __name__ == '__main__':
   
     if args.sarsa:
         print("Training SARSA agent...")
-        sarsa_metrics = run_trials(SARSA, args=args)
-        results.append(createDict("SARSA", SARSA, sarsa_metrics))
+        sarsa_metrics = run_trials(SARSA, args=args)    #    results.append(createDict("SARSA", SARSA, sarsa_metrics))    
     
     if args.qlearning:
         print("Training Q-Learning agent...")
@@ -350,3 +349,6 @@ if __name__ == '__main__':
 
     # Run experiments for Q-Learning
     #run_trials_with_hyperparams(QLearning, alpha_values, gamma_values, epsilon_values, args)
+
+    # Run experiments for Monte Carlo
+    #run_trials_with_hyperparams(MonteCarlo, alpha_values, gamma_values, epsilon_values, args)

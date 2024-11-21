@@ -151,3 +151,8 @@ class MonteCarlo:
         self.state = 0
         self.turn = 0
   
+    def clear_trajectory(self):
+        """
+        Resets the episode data after each episode ends.
+        """
+        self.trajectory = [[0, 0, 0]]
