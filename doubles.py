@@ -6,17 +6,15 @@ import shutil
 from typing import List, Tuple, Dict, Type, Union
 import argparse
 import pickle 
+import re
 
-from alayna_agents.QLearning_agent import QLearningAgent
-from alayna_agents.SARSA_agent import SARSA_0
+from agents.QLearning import QLearning
+from agents.SARSA import SARSA
+from agents.MonteCarlo import MonteCarlo
 from alayna_agents.perfect_agent import PerfectAgent
-from alayna_agents.MonteCarlo_agent import MonteCarloAgent
 import metrics
 from doublesPongEnv import PongEnv
 from pongVisualizer import PongVisualizer
-from kate_agents.MonteCarlo_agent import MonteCarlo
-from kate_agents.SARSA_agent import SARSA
-from kate_agents.QLearning_agent import QLearning
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -25,7 +23,7 @@ WINDOW_LENGTH = 30
 EXP_STARTS = False
 DEBUG = False
 METRICS_PATH = os.path.join(HERE, 'doubles-experiment1')
-TRAINED_AGENTS_PATH = os.path.join(HERE, 'trained_agents')
+TRAINED_AGENTS_PATH = os.path.join(HERE, 'best_agent_results')
 
 def log(val):
 	if DEBUG:
@@ -38,7 +36,7 @@ if METRICS_PATH:
         shutil.rmtree(METRICS_PATH)
         os.makedirs(METRICS_PATH)
 
-def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], agent_right: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], visualizer=None) -> Tuple[List[float], np.ndarray, Tuple, bool]:
+def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearning, QLearning, SARSA, SARSA, MonteCarlo, MonteCarlo, PerfectAgent]], agent_right: Type[Union[QLearning, QLearning, SARSA, SARSA, MonteCarlo, MonteCarlo, PerfectAgent]], visualizer=None) -> Tuple[List[float], np.ndarray, Tuple, bool]:
     """
     Play one episode in the Pong environment with two agents (left and right) and collect rewards.
 
@@ -110,10 +108,10 @@ def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearnin
         current_state = new_state
     
     # Handle final updates if agents need end-of-episode processing
-    if isinstance(agent_left, (MonteCarlo, MonteCarloAgent)):
+    if isinstance(agent_left, (MonteCarlo, MonteCarlo)):
         agent_left.update_q()
         agent_left.clear_trajectory()
-    if isinstance(agent_right, (MonteCarlo, MonteCarloAgent)):
+    if isinstance(agent_right, (MonteCarlo, MonteCarlo)):
         agent_right.update_q()
         agent_right.clear_trajectory()
   
@@ -129,11 +127,11 @@ def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearnin
     }
 
 
-def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], agent_right_class: Type[Union[QLearningAgent, QLearning, SARSA_0, SARSA, MonteCarloAgent, MonteCarlo, PerfectAgent]], args):
+def run_trials(agent_left_class: Type[Union[QLearning, QLearning, SARSA, SARSA, MonteCarlo, MonteCarlo, PerfectAgent]], agent_right_class: Type[Union[QLearning, QLearning, SARSA, SARSA, MonteCarlo, MonteCarlo, PerfectAgent]], args):
     """
 	Based on the agent type passed in, run many agents for a certain amount of episodes and gather metrics on their performance
 
-	:param agent_class (class): One of the following: SARSA_0, QLearningAgent, or MonteCarlo.
+	:param agent_class (class): One of the following: SARSA, QLearning, or MonteCarlo.
     :param args (argparse.Namespace): Parsed arguments from argparse containing parameters such as alpha, gamma, and epsilon. Can also contain 'pretrained' if we want to use a pretrained agent.
     :return Dict containing the following metrics for each agent (left and right):
             'avg_rewards': np.ndarray - Average rewards over all agents.
@@ -149,7 +147,7 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
     else:
         visualizer = None
         
-    params = {"gamma": args.gamma, "learning_rate": args.learningrate, "epsilon": args.epsilon}
+    params = {"gamma": args.gamma, "learning_rate": args.alpha, "epsilon": args.epsilon}
     params = {k:float(v) for k,v in params.items() if v is not None}
     print(f"Running trials for {agent_left_class.__name__} vs {agent_right_class.__name__} with non-default args {params}")
 
@@ -168,8 +166,18 @@ def run_trials(agent_left_class: Type[Union[QLearningAgent, QLearning, SARSA_0, 
 
     environment = PongEnv(grid_size=10)
     if args.pretrained:
-        agent_left = load_agent(agent_left_class, os.path.join(TRAINED_AGENTS_PATH, f'left_trained_{str(agent_left_class.__name__)}_9.pkl'), environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
-        agent_right = load_agent(agent_right_class, os.path.join(TRAINED_AGENTS_PATH, f'right_trained_{str(agent_right_class.__name__)}_9.pkl'), environment.get_number_of_states(), environment.get_number_of_actions()) #, gamma=0.9, learning_rate=0.1, epsilon=0.1)
+        left_filename = find_agent_file(TRAINED_AGENTS_PATH, 'left', str(agent_left_class.__name__))
+        left_hyperparameters = parse_hyperparameters(left_filename)
+        args.alpha = left_hyperparameters['alpha']
+        args.gamma = left_hyperparameters['gamma']
+        args.epsilon = left_hyperparameters['epsilon']
+        agent_left = load_agent(agent_left_class, os.path.join(TRAINED_AGENTS_PATH, left_filename), num_states=environment.get_number_of_states(), num_actions=environment.get_number_of_actions(), args=args) 
+        right_filename = find_agent_file(TRAINED_AGENTS_PATH, 'right', str(agent_right_class.__name__))
+        right_hyperparameters = parse_hyperparameters(right_filename)
+        args.alpha = right_hyperparameters['alpha']
+        args.gamma = right_hyperparameters['gamma']
+        args.epsilon = right_hyperparameters['epsilon']
+        agent_right = load_agent(agent_right_class, os.path.join(TRAINED_AGENTS_PATH, left_filename), num_states=environment.get_number_of_states(), num_actions=environment.get_number_of_actions(), args=args) 
     else:
         agent_left = agent_left_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
         agent_right = agent_right_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
@@ -334,23 +342,58 @@ def save_agent(agent, filename):
         pickle.dump(agent.q_table, f)
     print(f"Agent saved to {filename}")
 
-def load_agent(agent_class, filename, *args, **kwargs):
+def load_agent(agent_class, filename, num_states, num_actions, args):
     """
     Load an agent's Q-table from a file and initialize the agent.
 
-    :param agent_class: The class of the agent to be initialized (e.g., QLearningAgent).
+    :param agent_class: The class of the agent to be initialized (e.g., QLearning).
     :param filename (str): The file path from which the Q-table will be loaded.
     :param *args: Additional positional arguments for initializing the agent.
     :param **kwargs: Additional keyword arguments for initializing the agent.
     :return: An instance of the agent with the loaded Q-table.
     """
     # Initialize a new agent
-    agent = agent_class(*args, **kwargs)
+    params = {"gamma": args.gamma, "alpha": args.alpha, "epsilon": args.epsilon}
+    params = {k:float(v) for k,v in params.items() if v is not None}
+    agent = agent_class(num_states, num_actions, **params)
     # Load the saved Q-table
     with open(filename, 'rb') as f:
         agent.q_table = pickle.load(f)
     print(f"Agent loaded from {filename}")
     return agent
+
+
+def parse_hyperparameters(filename: str) -> dict:
+    """
+    Parse the hyperparameters (alpha, gamma, epsilon) from the filename.
+    
+    :param filename: The name of the file containing hyperparameters.
+    :return: A dictionary with the hyperparameter values.
+    """
+    pattern = r'_[a-zA-Z]+_a([0-9.]+)_g([0-9.]+)_e([0-9.]+)_'
+    match = re.search(pattern, filename)
+    if match:
+        return {
+            'alpha': float(match.group(1)),
+            'gamma': float(match.group(2)),
+            'epsilon': float(match.group(3))
+        }
+    raise ValueError("Filename does not match the expected pattern.")
+
+def find_agent_file(folder: str, side: str, agent_name: str) -> str:
+    """
+    Locate the file corresponding to a specific agent and side in the given folder.
+
+    :param folder: The path to the folder containing the saved files.
+    :param side: The side the agent is trained on (e.g., 'left', 'right').
+    :param agent_name: The name of the agent class (e.g., 'MonteCarlo').
+    :return: The full path to the file.
+    """
+    for file in os.listdir(folder):
+        if file.startswith(f"{side}_trained_{agent_name}"):
+            return os.path.join(folder, file)
+    raise FileNotFoundError(f"No file found for side '{side}' and agent '{agent_name}' in folder '{folder}'.")
+
 
 if __name__ == '__main__':
     
@@ -361,18 +404,18 @@ if __name__ == '__main__':
     parser.add_argument('--viz', action='store_true', help="if visualization is wanted")
     parser.add_argument('--plot', action='store_true', help="if plotting is wanted")
     parser.add_argument('--gamma', help="the value to be used for gamma")
-    parser.add_argument('--learningrate', help='the value to be used for learning rate')
+    parser.add_argument('--alpha', help='the value to be used for learning rate')
     parser.add_argument('--epsilon', help='the value to be used for epsilon')
     parser.add_argument('--debug', help='if debug mode is turned on')
     
     args = parser.parse_args()
     
     if args.agent_left.lower() == 'monte':
-        agent_left = MonteCarloAgent
+        agent_left = MonteCarlo
     elif args.agent_left == 'sarsa':
-        agent_left = SARSA_0
+        agent_left = SARSA
     elif args.agent_left == 'qlearning':
-        agent_left = QLearningAgent
+        agent_left = QLearning
     elif args.agent_left.lower() == 'monte_kate':
         agent_left = MonteCarlo
     elif args.agent_left == 'sarsa_kate':
@@ -383,11 +426,11 @@ if __name__ == '__main__':
         raise ValueError(f"Unknown agent type for left agent: {args.agent_left}")
 
     if args.agent_right.lower() == 'monte':
-        agent_right = MonteCarloAgent 
+        agent_right = MonteCarlo 
     elif args.agent_right == 'sarsa':
-        agent_right = SARSA_0
+        agent_right = SARSA
     elif args.agent_right == 'qlearning':
-        agent_right = QLearningAgent
+        agent_right = QLearning
     elif args.agent_right.lower() == 'monte_kate':
         agent_right = MonteCarlo
     elif args.agent_right == 'sarsa_kate':

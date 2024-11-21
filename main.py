@@ -244,23 +244,6 @@ def save_agent(agent, path):
         pickle.dump(agent.q_table, f)
     print(f"Agent saved to {path}")
 
-def load_agent(agent_class, filename, *args, **kwargs):
-    """
-    Load an agent's Q-table from a file and initialize the agent.
-
-    :param agent_class: The class of the agent to be initialized (e.g., QLearningAgent).
-    :param filename (str): The file path from which the Q-table will be loaded.
-    :param *args: Additional positional arguments for initializing the agent.
-    :param **kwargs: Additional keyword arguments for initializing the agent.
-    :return: An instance of the agent with the loaded Q-table.
-    """
-    # Initialize a new agent
-    agent = agent_class(*args, **kwargs)
-    # Load the saved Q-table
-    with open(filename, 'rb') as f:
-        agent.q_table = pickle.load(f)
-    print(f"Agent loaded from {filename}")
-    return agent
 
 def createDict(label, agent, metrics):
     return {
