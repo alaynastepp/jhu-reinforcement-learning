@@ -141,6 +141,9 @@ class MonteCarlo:
         """
         # record new state and reward in trajectory array
         self.trajectory.append([reward, state, -1])
+        
+    def clear_trajectory(self):
+        self.trajectory = [[0,0,0]]
 
     def reset(self):
         """

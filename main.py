@@ -18,10 +18,9 @@ from pongVisualizer import PongVisualizer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-AGENT_COUNT = 1
-EPISODE_COUNT = 1000
+AGENT_COUNT = 5
+EPISODE_COUNT = 500
 WINDOW_LENGTH = 30
-EXP_STARTS = False
 DEBUG = False
 METRICS_PATH = os.path.join(HERE, 'experiment2')
 TRAINED_AGENTS_PATH = os.path.join(HERE, 'trained_agents')
@@ -85,7 +84,7 @@ def generate_episode(episode: int, env: PongEnv, agent: Type[Union[QLearning, SA
             visualizer.render_static((ball_x, ball_y), paddle_y, agent_side)
         current_state = new_state
         
-    if type(agent) is MonteCarlo or type(agent) is MonteCarlo:
+    if type(agent) is MonteCarlo:
         agent.update_q()
         agent.clear_trajectory()
   
@@ -168,7 +167,7 @@ def run_trials(agent_class: Type[Union[QLearning, SARSA, MonteCarlo, PerfectAgen
         
         # save off trained agent
         if args.save:
-            save_agent(agent, os.path.join(TRAINED_AGENTS_PATH, f'{agent_side}_trained_{str(agent_class.__name__)}_a{agent.alpha}_g{agent.gamma}_e{agent.epsilon}_{a}.pkl'))
+            save_agent(agent, os.path.join(TRAINED_AGENTS_PATH, f'{environment.agent_side}_trained_{str(agent_class.__name__)}_a{agent.alpha}_g{agent.gamma}_e{agent.epsilon}_{a}.pkl'))
         
     # Calculate average rewards over the last 30 episodes
     avg_rewards_last_30 = np.mean([np.convolve(rewards, np.ones(30) / 30, mode='valid') for rewards in all_rewards], axis=0)
@@ -206,7 +205,7 @@ def run_trials_with_hyperparams(agent_class: Type[Union[QLearning, SARSA, MonteC
     :param epsilon_values: A list of possible epsilon (exploration rate) values.
     """
     best_avg_reward = -np.inf
-    best_params = None
+    best_params = []
 
     for alpha in alpha_values:
         for gamma in gamma_values:
@@ -224,14 +223,16 @@ def run_trials_with_hyperparams(agent_class: Type[Union[QLearning, SARSA, MonteC
 
                     if avg_reward > best_avg_reward:
                         best_avg_reward = avg_reward
-                        best_params = (alpha, gamma, epsilon)
+                        best_params = [(alpha, gamma, epsilon)]
+                    elif avg_reward == best_avg_reward:
+                        best_params.append((alpha, gamma, epsilon))
 
-    if best_params:
+    for params in best_params:
         print("\n" + "*" * 50)
         print(f"***** Best Parameters Found *****")
-        print(f"* Alpha:    {best_params[0]:.4f}")
-        print(f"* Gamma:    {best_params[1]:.4f}")
-        print(f"* Epsilon:  {best_params[2]:.4f}")
+        print(f"* Alpha:    {params[0]:.4f}")
+        print(f"* Gamma:    {params[1]:.4f}")
+        print(f"* Epsilon:  {params[2]:.4f}")
         print(f"* Avg Reward: {best_avg_reward:.2f}")
         print("*" * 50 + "\n")
 
@@ -285,7 +286,7 @@ if __name__ == '__main__':
     parser.add_argument('--viz', action='store_true', help="if visualization is wanted")
     parser.add_argument('--plot', action='store_true', help="if plotting is wanted")
     parser.add_argument('--gamma', help="the value to be used for gamma")
-    parser.add_argument('--learningrate', help='the value to be used for learning rate')
+    parser.add_argument('--alpha', help='the value to be used for learning rate')
     parser.add_argument('--epsilon', help='the value to be used for epsilon')
     parser.add_argument('--left', action='store_true', help='if the agent is on the left side')
     parser.add_argument('--right', action='store_true', help='if the agent is on the right side')
@@ -298,17 +299,17 @@ if __name__ == '__main__':
     if args.monte:
         print("Training Monte Carlo agent...")
         monte_metrics = run_trials(MonteCarlo, args=args)
-        results.append(createDict("Monte Carlo"), MonteCarlo, monte_metrics)
+        results.append(createDict("Monte Carlo", MonteCarlo, monte_metrics))
   
     if args.sarsa:
         print("Training SARSA agent...")
         sarsa_metrics = run_trials(SARSA, args=args)
-        results.append(createDict("SARSA"), SARSA, sarsa_metrics)
+        results.append(createDict("SARSA", SARSA, sarsa_metrics))
     
     if args.qlearning:
         print("Training Q-Learning agent...")
         qlearning_metrics = run_trials(QLearning, args=args)
-        results.append(createDict("Q-Learning"), QLearning, qlearning_metrics)
+        results.append(createDict("Q-Learning", QLearning, qlearning_metrics))
         
     # Only plot if visualization is requested
     if args.plot:

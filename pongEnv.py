@@ -2,14 +2,16 @@ import numpy as np
 import random
 
 class PongEnv:
-    def __init__(self, grid_size=10, ball_dx=1, ball_dy=1, ball_x=None, ball_y=None, max_steps=2000, agent_side='right', random_start=True):
+    def __init__(self, grid_size=10, ball_dx=1, ball_dy=1, ball_x=None, ball_y=None, max_steps=1000, agent_side='right', random_start=True):
         self.grid_size = grid_size
 
-        if random_start:
+        self.random_start = random_start
+        
+        if self.random_start:
             self.initial_ball_dx = random.choice([-1, 1])
             self.initial_ball_dy = random.choice([-1, 1])
-            self.initial_ball_x = random.choice(range(1, self.grid_size))
-            self.initial_ball_y = random.choice(range(1, self.grid_size))
+            self.initial_ball_x = random.choice(range(1, self.grid_size-1))
+            self.initial_ball_y = random.choice(range(1, self.grid_size-1))
         else:
             self.initial_ball_dx = ball_dx
             self.initial_ball_dy = ball_dy
@@ -38,11 +40,18 @@ class PongEnv:
         
         :return state (list): Current state: ball position, paddle position, and velocity
         """
-        # Reset ball position and direction to the initial values
-        self.ball_x = self.initial_ball_x
-        self.ball_y = self.initial_ball_y
-        self.ball_dx = self.initial_ball_dx
-        self.ball_dy = self.initial_ball_dy
+        
+        if self.random_start:
+            self.ball_dx = random.choice([-1, 1])
+            self.ball_dy = random.choice([-1, 1])
+            self.ball_x = random.choice(range(1, self.grid_size-1))
+            self.ball_y = random.choice(range(1, self.grid_size-1))
+        else:
+            # Reset ball position and direction to the initial values
+            self.ball_x = self.initial_ball_x
+            self.ball_y = self.initial_ball_y
+            self.ball_dx = self.initial_ball_dx
+            self.ball_dy = self.initial_ball_dy
         
         # Reset the paddle position
         self.paddle_y = self.grid_size // 2
