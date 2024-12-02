@@ -18,8 +18,8 @@ from pongVisualizer import PongVisualizer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-AGENT_COUNT = 5
-EPISODE_COUNT = 500
+AGENT_COUNT = 10
+EPISODE_COUNT = 1000
 DEBUG = False
 METRICS_PATH = os.path.join(HERE, 'experiment1')
 TRAINED_AGENTS_PATH = os.path.join(HERE, 'trained_agents')
@@ -267,12 +267,12 @@ if __name__ == '__main__':
     parser.add_argument('--qlearning', action='store_true', help='if Q-Learning algorithm should be run')
     parser.add_argument('--viz', action='store_true', help="if visualization is wanted")
     parser.add_argument('--plot', action='store_true', help="if plotting is wanted")
-    parser.add_argument('--gamma', help="the value to be used for gamma")
+    parser.add_argument('--gamma', help="the value to be used for discount factor")
     parser.add_argument('--alpha', help='the value to be used for learning rate')
-    parser.add_argument('--epsilon', help='the value to be used for epsilon')
-    parser.add_argument('--left', action='store_true', help='if the agent is on the left side')
-    parser.add_argument('--right', action='store_true', help='if the agent is on the right side')
-    parser.add_argument('--save', action='store_true', help='if the agent should get saved off as a trained agent')
+    parser.add_argument('--epsilon', help='the value to be used for exploration rate')
+    parser.add_argument('--left', action='store_true', help='if the agent is on the left side of the baord')
+    parser.add_argument('--right', action='store_true', help='if the agent is on the right side of the board')
+    parser.add_argument('--save', action='store_true', help='if the agent should get saved off as a pretrained agent after training')
     
     args = parser.parse_args()
 
@@ -318,9 +318,9 @@ if __name__ == '__main__':
             labels = [x['label'] for x in results]
             metrics.plot_winning_percentage(labels, [x['win_rates'] for x in results], save_path=METRICS_PATH)
             metrics.plot_cumulative_return([x['rewards'] for x in results], labels, save_path=METRICS_PATH)
-            metrics.plot_mean_visited_states_percentage([x['visit'] for x in results], labels, save_path=METRICS_PATH)
-            metrics.plot_all_agents_scores([x['avg_scores'] for x in results], labels, save_path=METRICS_PATH)
-            metrics.plot_all_agents_scores_smoothed([x['avg_scores'] for x in results], labels, save_path=METRICS_PATH)
+            metrics.plot_mean_visited_states_percentage([x['visits'] for x in results], labels, save_path=METRICS_PATH)
+            metrics.plot_all_agents_scores([x['scores'] for x in results], labels, save_path=METRICS_PATH)
+            metrics.plot_all_agents_scores_smoothed([x['scores'] for x in results], labels, save_path=METRICS_PATH)
             metrics.plot_winning_percentage_over_episodes([x['win_statuses'] for x in results], labels, save_path=METRICS_PATH)
         else:
             print("At least two agents are required for comparison.")
