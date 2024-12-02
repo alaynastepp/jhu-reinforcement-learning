@@ -18,10 +18,8 @@ from pongVisualizer import PongVisualizer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-AGENT_COUNT = 10
-EPISODE_COUNT = 1000
-WINDOW_LENGTH = 30
-EXP_STARTS = False
+AGENT_COUNT = 5
+EPISODE_COUNT = 500
 DEBUG = False
 METRICS_PATH = os.path.join(HERE, 'experiment1')
 TRAINED_AGENTS_PATH = os.path.join(HERE, 'trained_agents')
@@ -85,7 +83,7 @@ def generate_episode(episode: int, env: PongEnv, agent: Type[Union[QLearning, SA
             visualizer.render_static((ball_x, ball_y), paddle_y, agent_side)
         current_state = new_state
         
-    if type(agent) is MonteCarlo or type(agent) is MonteCarlo:
+    if type(agent) is MonteCarlo:
         agent.update_q()
         agent.clear_trajectory()
   
@@ -331,7 +329,7 @@ if __name__ == '__main__':
     #run_trials_with_hyperparams(SARSA, alpha_values, gamma_values, epsilon_values, args)
 
     # Run experiments for Q-Learning
-    #run_trials_with_hyperparams(QLearning, alpha_values, gamma_values, epsilon_values, args)
+    run_trials_with_hyperparams(QLearning, alpha_values, gamma_values, epsilon_values, args)
 
     # Run experiments for Monte Carlo
     #run_trials_with_hyperparams(MonteCarlo, alpha_values, gamma_values, epsilon_values, args)
