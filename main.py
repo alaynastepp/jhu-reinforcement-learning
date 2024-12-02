@@ -326,10 +326,10 @@ if __name__ == '__main__':
     epsilon_values = [0.01, 0.1, 0.2, 0.5] 
 
     # Run experiments for SARSA
-    #run_trials_with_hyperparams(SARSA, alpha_values, gamma_values, epsilon_values, args)
+    run_trials_with_hyperparams(SARSA, alpha_values, gamma_values, epsilon_values, args)
 
     # Run experiments for Q-Learning
-    run_trials_with_hyperparams(QLearning, alpha_values, gamma_values, epsilon_values, args)
+    #run_trials_with_hyperparams(QLearning, alpha_values, gamma_values, epsilon_values, args)
 
     # Run experiments for Monte Carlo
     #run_trials_with_hyperparams(MonteCarlo, alpha_values, gamma_values, epsilon_values, args)

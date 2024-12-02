@@ -20,9 +20,6 @@ class MonteCarlo:
         self.number_of_actions = num_actions
         self.number_of_states = num_states
 
-        print("e ", epsilon)
-        print('a ', alpha)
-        print('g ', gamma)
         self.state = 0
 
         self.visits_table = np.zeros((self.number_of_states, self.number_of_actions))

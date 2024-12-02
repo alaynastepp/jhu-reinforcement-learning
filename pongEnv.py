@@ -9,13 +9,14 @@ class PongEnv:
         if self.random_start:
             self.initial_ball_dx = random.choice([-1, 1])
             self.initial_ball_dy = random.choice([-1, 1])
-            self.initial_ball_x = random.choice(range(1, self.grid_size-1))
             self.initial_ball_y = random.choice(range(1, self.grid_size-1))
         else:
             self.initial_ball_dx = ball_dx
             self.initial_ball_dy = ball_dy
-            self.initial_ball_x = ball_x if ball_x is not None else self.grid_size // 2
             self.initial_ball_y = ball_y if ball_y is not None else self.grid_size // 2
+            
+        # ball x stays the same - in the middle of the grid
+        self.initial_ball_x = ball_x if ball_x is not None else self.grid_size // 2
         
         self.agent_side = agent_side  
         self.paddle_y = self.grid_size // 2
@@ -40,10 +41,18 @@ class PongEnv:
         :return state (list): Current state: ball position, paddle position, and velocity
         """
         # Reset ball position and direction to the initial values
+        if self.random_start:
+            self.ball_dx = random.choice([-1, 1])
+            self.ball_dy = random.choice([-1, 1])
+            self.ball_y = random.choice(range(1, self.grid_size-1))
+        else:
+            # Reset ball position and direction to the initial values
+            self.ball_x = self.initial_ball_x
+            self.ball_y = self.initial_ball_y
+            self.ball_dy = self.initial_ball_dy
+            
+        # ball x stays the same - in the middle of the grid
         self.ball_x = self.initial_ball_x
-        self.ball_y = self.initial_ball_y
-        self.ball_dx = self.initial_ball_dx
-        self.ball_dy = self.initial_ball_dy
         
         # Reset the paddle position
         self.paddle_y = self.grid_size // 2
