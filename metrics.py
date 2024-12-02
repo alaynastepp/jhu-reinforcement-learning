@@ -133,6 +133,40 @@ def plot_state_action_distribution(visit_count, agent_name, save_path=None):
         plt.savefig(file_path)
     #plt.show()
     plt.close()
+
+def plot_state_action_distribution_all(visit_counts, agent_names, save_path=None):
+    num_agents = len(agent_names)
+    actions = ["Stay Still", "Move Up", "Move Down"]
+    num_actions = len(actions)
+
+    # Calculate total visits for each action per agent
+    total_visits = [np.sum(vc, axis=0) for vc in visit_counts]  # Sum over states
+    x = np.arange(num_actions)  # x-axis positions for actions
+    bar_width = 0.2  # Width of each bar
+
+    plt.figure(figsize=(12, 6))
+    for i, (agent_name, visits) in enumerate(zip(agent_names, total_visits)):
+        plt.bar(
+            x + i * bar_width, 
+            visits, 
+            width=bar_width, 
+            label=agent_name, 
+            alpha=0.7
+        )
+
+    plt.xlabel("Actions")
+    plt.ylabel("Total Visit Count")
+    plt.title("State-Action Visit Counts per Agent")
+    plt.xticks(x + bar_width * (num_agents - 1) / 2, actions)  # Center action labels
+    plt.legend(title="Agents")
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+    # Save or display the plot
+    if save_path:
+        file_path = os.path.join(save_path, "all_state_action_visits.png")
+        plt.savefig(file_path)
+    #plt.show()
+    plt.close()
     
 def plot_state_visitation(all_V_t, agent_class_name, save_path=None):
     """
