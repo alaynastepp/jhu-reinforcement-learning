@@ -189,7 +189,7 @@ def run_trials(agent_class: Type[Union[QLearning, SARSA, MonteCarlo, PerfectAgen
         'avg_rewards': np.mean(all_rewards, axis=0),
         'avg_wins': total_wins / (AGENT_COUNT * EPISODE_COUNT),  # Calculate win rate
         'avg_scores': np.mean(all_scores, axis=0),
-        'state_action_visit_count': visit_count,
+        'state_action_visit_count': visit_count / AGENT_COUNT,
         'win_statuses': np.mean(all_wins, axis=0),
         'state_visit_percentages': all_V_t
     }
@@ -300,19 +300,19 @@ if __name__ == '__main__':
             metrics.plot_state_visitation(monte_metrics["state_visit_percentages"], "Monte Carlo", save_path=METRICS_PATH)
             metrics.plot_visit_percentage(agent_name="Monte Carlo", visit_count=monte_metrics["state_action_visit_count"], save_path=METRICS_PATH)
             metrics.plot_mean_visited_states_per_action(visit_count=monte_metrics["state_action_visit_count"], agent_name="Monte Carlo", save_path=METRICS_PATH)
-            metrics.plot_state_action_distribution(visit_count=monte_metrics["state_action_visit_count"], agent_name="Monte Carlo", save_path=METRICS_PATH)
+            metrics.plot_state_action_distribution_logscale(visit_count=monte_metrics["state_action_visit_count"], agent_name="Monte Carlo", save_path=METRICS_PATH)
         if args.sarsa:
             metrics.plot_agent_scores(agent_name="SARSA", agent_scores=sarsa_metrics["avg_scores"], save_path=METRICS_PATH)
             metrics.plot_state_visitation(sarsa_metrics["state_visit_percentages"], "SARSA", save_path=METRICS_PATH)
             metrics.plot_visit_percentage(agent_name="SARSA", visit_count=sarsa_metrics["state_action_visit_count"], save_path=METRICS_PATH)
             metrics.plot_mean_visited_states_per_action(visit_count=sarsa_metrics["state_action_visit_count"], agent_name="SARSA", save_path=METRICS_PATH)
-            metrics.plot_state_action_distribution(visit_count=sarsa_metrics["state_action_visit_count"], agent_name="SARSA", save_path=METRICS_PATH)
+            metrics.plot_state_action_distribution_logscale(visit_count=sarsa_metrics["state_action_visit_count"], agent_name="SARSA", save_path=METRICS_PATH)
         if args.qlearning:
             metrics.plot_agent_scores(agent_name="Q-Learning", agent_scores=qlearning_metrics["avg_scores"], save_path=METRICS_PATH)
             metrics.plot_state_visitation(qlearning_metrics["state_visit_percentages"], "Q-Learning", save_path=METRICS_PATH)
             metrics.plot_visit_percentage(agent_name="Q-Learning", visit_count=qlearning_metrics["state_action_visit_count"], save_path=METRICS_PATH)
             metrics.plot_mean_visited_states_per_action(visit_count=qlearning_metrics["state_action_visit_count"], agent_name="Q-Learning", save_path=METRICS_PATH)
-            metrics.plot_state_action_distribution(visit_count=qlearning_metrics["state_action_visit_count"], agent_name="Q-Learning", save_path=METRICS_PATH)
+            metrics.plot_state_action_distribution_logscale(visit_count=qlearning_metrics["state_action_visit_count"], agent_name="Q-Learning", save_path=METRICS_PATH)
 
         if len(results) > 1:
             labels = [x['label'] for x in results]
@@ -322,6 +322,7 @@ if __name__ == '__main__':
             metrics.plot_all_agents_scores([x['scores'] for x in results], labels, save_path=METRICS_PATH)
             metrics.plot_all_agents_scores_smoothed([x['scores'] for x in results], labels, save_path=METRICS_PATH)
             metrics.plot_winning_percentage_over_episodes([x['win_statuses'] for x in results], labels, save_path=METRICS_PATH)
+            metrics.plot_state_action_distribution_all_logscale([x['visits'] for x in results], labels, save_path=METRICS_PATH)
         else:
             print("At least two agents are required for comparison.")
 
