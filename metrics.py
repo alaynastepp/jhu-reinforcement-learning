@@ -4,6 +4,8 @@ import numpy as np
 import os
 from typing import List, Tuple, Dict, Type, Union
 
+AGENT_COLOR_PALETTE = sns.color_palette("tab10")
+
 def pretty_print_metrics(avg_rewards, avg_wins, percentage_visited_0_to_450, percentage_visited_450_to_900):
     print("\nExperiment Metrics:")
     print("====================")
@@ -41,7 +43,9 @@ def plot_visit_percentage(agent_name, visit_count, save_path=None):
 def plot_winning_percentage(agent_labels: List[str], avg_wins: List[float], save_path=None):
     plt.figure(figsize=(10, 6))
     # Plotting each agent's winning percentage dynamically
-    plt.bar(agent_labels, [win * 100 for win in avg_wins], color=sns.color_palette("Set2", len(agent_labels)))
+    colors = [AGENT_COLOR_PALETTE[i % len(AGENT_COLOR_PALETTE)] for i in range(len(agent_labels))]
+    plt.bar(agent_labels, [win * 100 for win in avg_wins], color=colors)
+    #plt.bar(agent_labels, [win * 100 for win in avg_wins], color=sns.color_palette("Set2", len(agent_labels)))
     plt.ylabel("Mean Winning Percentage (%)")
     plt.title("Mean Winning Percentage Comparison")
     if save_path:
@@ -53,7 +57,7 @@ def plot_winning_percentage(agent_labels: List[str], avg_wins: List[float], save
 def plot_cumulative_return(avg_rewards: List[np.ndarray], agent_labels: List[str], save_path=None):
     plt.figure(figsize=(10, 6))
     for i, rewards in enumerate(avg_rewards):
-        plt.plot(moving_average(rewards), label=agent_labels[i], linewidth=2)
+        plt.plot(moving_average(rewards), label=agent_labels[i], linewidth=2, color=AGENT_COLOR_PALETTE[i % len(AGENT_COLOR_PALETTE)])
     plt.xlabel("Episodes")
     plt.ylabel("Mean Cumulative Return")
     plt.title("Mean Cumulative Return over Episodes")
@@ -67,7 +71,8 @@ def plot_cumulative_return(avg_rewards: List[np.ndarray], agent_labels: List[str
 def plot_mean_visited_states_percentage(visit_counts: List[np.ndarray], agent_labels: List[str], save_path=None):
     plt.figure(figsize=(10, 6))
     visited_states = [np.sum(visit_count > 0) / visit_count.size * 100 for visit_count in visit_counts]
-    plt.bar(agent_labels, visited_states, color=sns.color_palette("Set2", len(agent_labels)))
+    colors = [AGENT_COLOR_PALETTE[i % len(AGENT_COLOR_PALETTE)] for i in range(len(agent_labels))]
+    plt.bar(agent_labels, visited_states, color=colors)
     plt.ylabel("Mean Percentage of Visited States (%)")
     plt.title("Mean Percentage of Visited States Comparison")
     if save_path:
@@ -89,7 +94,7 @@ def plot_winning_percentage_over_episodes(win_statuses, agent_labels, save_path=
     # Plot each agent's winning percentage moving average
     for i, wins in enumerate(win_statuses):
         moving_avg = moving_average(wins, window_size=30)
-        plt.plot(moving_avg, label=f"{agent_labels[i]} Winning Percentage (Moving Avg)", color=f"C{i}")
+        plt.plot(moving_avg, label=f"{agent_labels[i]} Winning Percentage (Moving Avg)", color=AGENT_COLOR_PALETTE[i % len(AGENT_COLOR_PALETTE)])
 
     plt.xlabel("Episodes")
     plt.ylabel("Winning Percentage")
@@ -171,7 +176,8 @@ def plot_state_action_distribution_all(visit_counts, agent_names, save_path=None
             visits, 
             width=bar_width, 
             label=agent_name, 
-            alpha=0.7
+            alpha=0.7,
+            color=AGENT_COLOR_PALETTE[i % len(AGENT_COLOR_PALETTE)]
         )
 
     plt.xlabel("Actions")
@@ -205,7 +211,8 @@ def plot_state_action_distribution_all_logscale(visit_counts, agent_names, save_
             visits, 
             width=bar_width, 
             label=agent_name, 
-            alpha=0.7
+            alpha=0.7,
+            color=AGENT_COLOR_PALETTE[i % len(AGENT_COLOR_PALETTE)]
         )
     
     plt.yscale('log')  # Apply logarithmic scale
@@ -234,7 +241,7 @@ def plot_state_visitation(all_V_t, agent_class_name, save_path=None):
     # Combine V_t data from all agents
     combined_V_t = np.mean(all_V_t, axis=0)  # Average over all agents for each episode
     plt.figure(figsize=(10, 6))
-    plt.plot(range(len(combined_V_t)), combined_V_t, label=f'{agent_class_name} State Visitation', color='b')
+    plt.plot(range(len(combined_V_t)), combined_V_t, label=f'{agent_class_name} State Visitation', color='teal')
     plt.xlabel('Episode')
     plt.ylabel('Percentage of States Visited')
     plt.title(f'{agent_class_name} - State Visitation (V_t) Over Episodes (All Agents)')
@@ -255,7 +262,7 @@ def plot_agent_scores(agent_scores: np.ndarray, agent_name: str, save_path:str =
     :param label: str - Label for the agent, used for plot title and legend.
     """
     plt.figure(figsize=(10, 6))
-    plt.plot(agent_scores, label=agent_name)
+    plt.plot(agent_scores, label=agent_name, color='teal')
     plt.title(f"{agent_name} Scores over Episodes")
     plt.xlabel("Episodes")
     plt.ylabel("Score")
@@ -270,7 +277,7 @@ def plot_agent_scores(agent_scores: np.ndarray, agent_name: str, save_path:str =
 def plot_all_agents_scores(agent_scores: List[np.ndarray], agent_labels: List[str], save_path=None):
     plt.figure(figsize=(10, 6))
     for i, scores in enumerate(agent_scores):
-        plt.plot(scores, label=agent_labels[i])
+        plt.plot(scores, label=agent_labels[i], color=AGENT_COLOR_PALETTE[i % len(AGENT_COLOR_PALETTE)])
     plt.title("Agent Performance Comparison")
     plt.xlabel("Episodes")
     plt.ylabel("Average Score")
@@ -288,7 +295,7 @@ def plot_all_agents_scores_smoothed(agent_scores: List[np.ndarray], agent_labels
     plt.figure(figsize=(10, 6))
     for i, scores in enumerate(agent_scores):
         smoothed_scores = smooth_data(scores)
-        plt.plot(smoothed_scores, label=agent_labels[i])
+        plt.plot(smoothed_scores, label=agent_labels[i], color=AGENT_COLOR_PALETTE[i % len(AGENT_COLOR_PALETTE)])
     plt.title("Agent Performance Comparison (Smoothed)")
     plt.xlabel("Episodes")
     plt.ylabel("Average Score")
