@@ -253,6 +253,35 @@ def plot_state_visitation(all_V_t, agent_class_name, save_path=None):
         plt.savefig(file_path)
     #plt.show()
     plt.close()
+    
+def plot_state_visitation_all(all_V_t, agent_class_names, save_path=None):
+    """
+    Plots the state visitation percentage (V_t) over episodes for all agents on a single graph.
+
+    :param all_V_t: A list of lists, where each sublist contains the V_t data (1D numpy array) for each agent.
+    :param agent_class_names: A list of agent class names corresponding to each sublist in all_V_t.
+    :param save_path: Optional path to save the plot as a PNG file.
+    """
+    plt.figure(figsize=(10, 6))
+    
+    for i, (V_t, agent_name) in enumerate(zip(all_V_t, agent_class_names)):
+        # Average V_t over all agents for each class
+        combined_V_t = np.mean(V_t, axis=0)
+        plt.plot(range(len(combined_V_t)), combined_V_t, label=f'{agent_name} State Visitation', color=AGENT_COLOR_PALETTE[i % len(AGENT_COLOR_PALETTE)])
+    
+    plt.xlabel('Episode')
+    plt.ylabel('Percentage of States Visited')
+    plt.title('State Visitation (V_t) Over Episodes (All Agents)')
+    plt.legend(loc='best')
+    plt.grid(True)
+    plt.tight_layout()
+    
+    if save_path:
+        file_path = os.path.join(save_path, "state_visitation_all_agents.png")
+        plt.savefig(file_path)
+    
+    #plt.show()
+    plt.close()
 
 def plot_agent_scores(agent_scores: np.ndarray, agent_name: str, save_path:str = None):
     """

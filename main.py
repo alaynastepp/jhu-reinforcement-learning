@@ -255,7 +255,8 @@ def createDict(label, agent, metrics):
         "scores": metrics['avg_scores'],
         "visits": metrics['state_action_visit_count'],
         "win_rates": metrics['avg_wins'],
-        "win_statuses": metrics['win_statuses']
+        "win_statuses": metrics['win_statuses'],
+        "visit_percentages": metrics["state_visit_percentages"]
     }
 
 
@@ -323,6 +324,7 @@ if __name__ == '__main__':
             metrics.plot_all_agents_scores_smoothed([x['scores'] for x in results], labels, save_path=METRICS_PATH)
             metrics.plot_winning_percentage_over_episodes([x['win_statuses'] for x in results], labels, save_path=METRICS_PATH)
             metrics.plot_state_action_distribution_all_logscale([x['visits'] for x in results], labels, save_path=METRICS_PATH)
+            metrics.plot_state_visitation_all([x['visit_percentages'] for x in results], labels, save_path=METRICS_PATH)
         else:
             print("At least two agents are required for comparison.")
 
