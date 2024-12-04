@@ -22,8 +22,8 @@ EPISODE_COUNT = 1000
 WINDOW_LENGTH = 30
 EXP_STARTS = False
 DEBUG = False
-METRICS_PATH = os.path.join(HERE, 'doubles-experiment1')
-TRAINED_AGENTS_PATH = os.path.join(HERE, 'best_agent_results')
+METRICS_PATH = os.path.join(HERE, 'best_agent_results')
+TRAINED_AGENTS_PATH = os.path.join(HERE, 'best_agents')
 
 def log(val):
 	if DEBUG:
@@ -32,9 +32,9 @@ def log(val):
 if METRICS_PATH:
     if not os.path.exists(METRICS_PATH):
         os.makedirs(METRICS_PATH)
-    else:
-        shutil.rmtree(METRICS_PATH)
-        os.makedirs(METRICS_PATH)
+    #else:
+    #    shutil.rmtree(METRICS_PATH)
+    #    os.makedirs(METRICS_PATH)
 
 def generate_episode(episode: int, env: PongEnv, agent_left: Type[Union[QLearning, QLearning, SARSA, SARSA, MonteCarlo, MonteCarlo, PerfectAgent]], agent_right: Type[Union[QLearning, QLearning, SARSA, SARSA, MonteCarlo, MonteCarlo, PerfectAgent]], visualizer=None) -> Tuple[List[float], np.ndarray, Tuple, bool]:
     """
@@ -172,12 +172,23 @@ def run_trials(agent_left_class: Type[Union[QLearning, QLearning, SARSA, SARSA, 
         args.gamma = left_hyperparameters['gamma']
         args.epsilon = left_hyperparameters['epsilon']
         agent_left = load_agent(agent_left_class, os.path.join(TRAINED_AGENTS_PATH, left_filename), num_states=environment.get_number_of_states(), num_actions=environment.get_number_of_actions(), args=args) 
+        # Print information about the left agent
+        print(f"Loaded left agent: {agent_left_class.__name__}")
+        print(f"Agent size (number of states): {environment.get_number_of_states()}")
+        print(f"Agent size (number of actions): {environment.get_number_of_actions()}")
+        print(f"Left agent hyperparameters: alpha={args.alpha}, gamma={args.gamma}, epsilon={args.epsilon}")
+
         right_filename = find_agent_file(TRAINED_AGENTS_PATH, 'right', str(agent_right_class.__name__))
         right_hyperparameters = parse_hyperparameters(right_filename)
         args.alpha = right_hyperparameters['alpha']
         args.gamma = right_hyperparameters['gamma']
         args.epsilon = right_hyperparameters['epsilon']
         agent_right = load_agent(agent_right_class, os.path.join(TRAINED_AGENTS_PATH, left_filename), num_states=environment.get_number_of_states(), num_actions=environment.get_number_of_actions(), args=args) 
+        # Print information about the left agent
+        print(f"Loaded left agent: {agent_left_class.__name__}")
+        print(f"Agent size (number of states): {environment.get_number_of_states()}")
+        print(f"Agent size (number of actions): {environment.get_number_of_actions()}")
+        print(f"Left agent hyperparameters: alpha={args.alpha}, gamma={args.gamma}, epsilon={args.epsilon}")
     else:
         agent_left = agent_left_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
         agent_right = agent_right_class(environment.get_number_of_states(), environment.get_number_of_actions(), **params)
@@ -416,12 +427,6 @@ if __name__ == '__main__':
         agent_left = SARSA
     elif args.agent_left == 'qlearning':
         agent_left = QLearning
-    elif args.agent_left.lower() == 'monte_kate':
-        agent_left = MonteCarlo
-    elif args.agent_left == 'sarsa_kate':
-        agent_left = SARSA
-    elif args.agent_left == 'qlearning_kate':
-        agent_left = QLearning
     else:
         raise ValueError(f"Unknown agent type for left agent: {args.agent_left}")
 
@@ -430,12 +435,6 @@ if __name__ == '__main__':
     elif args.agent_right == 'sarsa':
         agent_right = SARSA
     elif args.agent_right == 'qlearning':
-        agent_right = QLearning
-    elif args.agent_right.lower() == 'monte_kate':
-        agent_right = MonteCarlo
-    elif args.agent_right == 'sarsa_kate':
-        agent_right = SARSA
-    elif args.agent_right == 'qlearning_kate':
         agent_right = QLearning
     else:
         raise ValueError(f"Unknown agent type for left agent: {args.agent_right}")
@@ -477,12 +476,12 @@ if __name__ == '__main__':
         metrics.plot_state_visitation(results["state_visit_percentages_left"], str(agent_left.__name__), save_path=METRICS_PATH)
         metrics.plot_visit_percentage(agent_name=str(agent_left.__name__), visit_count=results["state_action_visit_count_left"], save_path=METRICS_PATH)
         metrics.plot_mean_visited_states_per_action(visit_count=results["state_action_visit_count_left"], agent_name=str(agent_left.__name__), save_path=METRICS_PATH)
-        metrics.plot_state_action_distribution(visit_count=results["state_action_visit_count_left"], agent_name=str(agent_left.__name__), save_path=METRICS_PATH)
+        metrics.plot_state_action_distribution_logscale(visit_count=results["state_action_visit_count_left"], agent_name=str(agent_left.__name__), save_path=METRICS_PATH)
         metrics.plot_agent_scores(agent_name=str(agent_right.__name__), agent_scores=results["avg_scores_right"], save_path=METRICS_PATH)
         metrics.plot_state_visitation(results["state_visit_percentages_right"], str(agent_right.__name__), save_path=METRICS_PATH)
         metrics.plot_visit_percentage(agent_name=str(agent_right.__name__), visit_count=results["state_action_visit_count_right"], save_path=METRICS_PATH)
         metrics.plot_mean_visited_states_per_action(visit_count=results["state_action_visit_count_right"], agent_name=str(agent_right.__name__), save_path=METRICS_PATH)
-        metrics.plot_state_action_distribution(visit_count=results["state_action_visit_count_right"], agent_name=str(agent_right.__name__), save_path=METRICS_PATH)
+        metrics.plot_state_action_distribution_logscale(visit_count=results["state_action_visit_count_right"], agent_name=str(agent_right.__name__), save_path=METRICS_PATH)
 
         if len(agent_labels) > 1:
             metrics.plot_winning_percentage(agent_labels, win_rates, save_path=METRICS_PATH)
@@ -491,6 +490,7 @@ if __name__ == '__main__':
             metrics.plot_all_agents_scores(avg_scores, agent_labels, save_path=METRICS_PATH)
             metrics.plot_all_agents_scores_smoothed(avg_scores, agent_labels, save_path=METRICS_PATH)
             metrics.plot_winning_percentage_over_episodes(win_statuses, agent_labels, save_path=METRICS_PATH)
+            metrics.plot_state_action_distribution_all_logscale(visit_counts, agent_labels, save_path=METRICS_PATH)
         else:
             print("At least two agents are required for comparison.")
 

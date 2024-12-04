@@ -22,7 +22,7 @@ AGENT_COUNT = 10
 EPISODE_COUNT = 1000
 DEBUG = False
 METRICS_PATH = os.path.join(HERE, 'experiment1')
-TRAINED_AGENTS_PATH = os.path.join(HERE, 'trained_agents')
+TRAINED_AGENTS_PATH = os.path.join(HERE, 'best_agents')
 
 def log(val):
 	if DEBUG:
@@ -334,7 +334,7 @@ if __name__ == '__main__':
     epsilon_values = [0.01, 0.1, 0.2, 0.5] 
 
     # Run experiments for SARSA
-    run_trials_with_hyperparams(SARSA, alpha_values, gamma_values, epsilon_values, args)
+    #run_trials_with_hyperparams(SARSA, alpha_values, gamma_values, epsilon_values, args)
 
     # Run experiments for Q-Learning
     #run_trials_with_hyperparams(QLearning, alpha_values, gamma_values, epsilon_values, args)
