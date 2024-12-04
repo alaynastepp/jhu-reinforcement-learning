@@ -19,7 +19,7 @@ class PongVisualizer:
 
         # Set up the display
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
-        pygame.display.set_caption("Pong with Grid and Wall")
+        pygame.display.set_caption("RL Ping Pong")
 
     def draw_grid(self):
         for row in range(self.grid_size):
@@ -101,7 +101,7 @@ class PongVisualizer:
         pygame.display.flip()
         
         # Set frame rate
-        pygame.time.Clock().tick(50)
+        pygame.time.Clock().tick(20)
 
     def close(self):
         pygame.quit()
