@@ -69,7 +69,7 @@ class PongVisualizer:
         pygame.display.flip()
         
         # Set frame rate
-        pygame.time.Clock().tick(30)
+        pygame.time.Clock().tick(20)
 
         
     def render_dynamic(self, ball_position, paddle_position_left, paddle_position_right):
